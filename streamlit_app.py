@@ -368,51 +368,391 @@ class AIAnalytics:
     def __init__(self, api_key: str):
         self.client = anthropic.Anthropic(api_key=api_key)
     
-def analyze_workload_patterns(self, workload_data: dict) -> dict:
-    """Analyze workload patterns and provide intelligent recommendations"""
+    def analyze_workload_patterns(self, workload_data: dict) -> dict:
+        """Analyze workload patterns and provide intelligent recommendations"""
 
-    prompt = f"""
-    As an expert database architect and cloud migration specialist, analyze this workload data and provide intelligent insights:
+        prompt = f"""
+        As an expert database architect and cloud migration specialist, analyze this workload data and provide intelligent insights:
 
-    Workload Data:
-    - Database Engine: {workload_data.get('engine')}
-    - Current CPU Cores: {workload_data.get('cores')}
-    - Current RAM: {workload_data.get('ram')} GB
-    - Storage: {workload_data.get('storage')} GB
-    - Peak CPU Utilization: {workload_data.get('cpu_util')}%
-    - Peak RAM Utilization: {workload_data.get('ram_util')}%
-    - IOPS Requirements: {workload_data.get('iops')}
-    - Growth Rate: {workload_data.get('growth')}% annually
-    - Region: {workload_data.get('region')}
+        Workload Data:
+        - Database Engine: {workload_data.get('engine')}
+        - Current CPU Cores: {workload_data.get('cores')}
+        - Current RAM: {workload_data.get('ram')} GB
+        - Storage: {workload_data.get('storage')} GB
+        - Peak CPU Utilization: {workload_data.get('cpu_util')}%
+        - Peak RAM Utilization: {workload_data.get('ram_util')}%
+        - IOPS Requirements: {workload_data.get('iops')}
+        - Growth Rate: {workload_data.get('growth')}% annually
+        - Region: {workload_data.get('region')}
 
-    Please provide a comprehensive analysis including:
-    1. Workload Classification (OLTP/OLAP/Mixed)
-    2. Performance Bottleneck Identification
-    3. Right-sizing Recommendations
-    4. Cost Optimization Opportunities
-    5. Migration Strategy Recommendations
-    6. Risk Assessment and Mitigation
-    7. Timeline and Complexity Estimation
+        Please provide a comprehensive analysis including:
+        1. Workload Classification (OLTP/OLAP/Mixed)
+        2. Performance Bottleneck Identification
+        3. Right-sizing Recommendations
+        4. Cost Optimization Opportunities
+        5. Migration Strategy Recommendations
+        6. Risk Assessment and Mitigation
+        7. Timeline and Complexity Estimation
 
-    Respond in a structured format with clear sections.
-    """
+        Respond in a structured format with clear sections.
+        """
 
-    try:
-        message = self.client.messages.create(
-            model="claude-3-sonnet-20240229",
-            max_tokens=2000,
-            messages=[{"role": "user", "content": prompt}]
-        )
+        try:
+            message = self.client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
+            )
 
-        # Parse AI response
-        ai_analysis = self._parse_ai_response(message.content[0].text)
-        return ai_analysis
+            # Parse AI response
+            ai_analysis = self._parse_ai_response(message.content[0].text)
+            return ai_analysis
 
-    except Exception as e:
-        return {"error": f"AI analysis failed: {str(e)}"}
+        except Exception as e:
+            return {"error": f"AI analysis failed: {str(e)}"}
+    
+    def generate_migration_strategy(self, analysis_data: dict) -> dict:
+        """Generate detailed migration strategy with AI insights"""
+        
+        prompt = f"""
+        Based on the database analysis, create a comprehensive migration strategy:
 
+        Analysis Summary: 
+        - Engine: {analysis_data.get('engine', 'Unknown')}
+        - Estimated Cost: ${analysis_data.get('monthly_cost', 0):,.2f}/month
+        - Complexity: Medium to High
 
-            # Select optimal instance
+        Please provide:
+        1. Pre-migration checklist and requirements
+        2. Detailed migration phases with timelines
+        3. Resource allocation recommendations
+        4. Testing and validation strategy
+        5. Rollback procedures
+        6. Post-migration optimization steps
+        7. Monitoring and alerting setup
+        8. Security and compliance considerations
+
+        Include specific AWS services, tools, and best practices.
+        """
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=2500,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            return self._parse_migration_strategy(message.content[0].text)
+            
+        except Exception as e:
+            return {"error": f"Migration strategy generation failed: {str(e)}"}
+    
+    def predict_future_requirements(self, historical_data: dict, years: int = 3) -> dict:
+        """Predict future resource requirements using AI"""
+        
+        prompt = f"""
+        As a data scientist specializing in capacity planning, analyze these metrics and predict future requirements:
+
+        Current Configuration:
+        - CPU Cores: {historical_data.get('cores')}
+        - RAM: {historical_data.get('ram')} GB
+        - Storage: {historical_data.get('storage')} GB
+        - Growth Rate: {historical_data.get('growth')}% annually
+        - Engine: {historical_data.get('engine')}
+
+        Prediction Period: {years} years
+
+        Consider:
+        - Technology evolution impact
+        - Business scaling factors
+        - Industry benchmarks for {historical_data.get('engine')} workloads
+
+        Provide predictions for:
+        - CPU requirements
+        - Memory usage
+        - Storage growth
+        - IOPS scaling
+        - Cost projections
+
+        Include key assumptions and confidence levels.
+        """
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            return self._parse_predictions(message.content[0].text)
+            
+        except Exception as e:
+            return {"error": f"Prediction generation failed: {str(e)}"}
+    
+    def _parse_ai_response(self, response_text: str) -> dict:
+        """Parse AI response into structured data"""
+        # Extract key insights from the response
+        lines = response_text.split('\n')
+        
+        # Default structure
+        result = {
+            "workload_type": "Mixed",
+            "complexity": "Medium",
+            "timeline": "12-16 weeks",
+            "bottlenecks": [],
+            "recommendations": [],
+            "risks": [],
+            "summary": response_text[:500] + "..." if len(response_text) > 500 else response_text
+        }
+        
+        # Parse specific sections
+        current_section = ""
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Identify sections
+            if "workload" in line.lower() and ("classification" in line.lower() or "type" in line.lower()):
+                if "oltp" in line.lower():
+                    result["workload_type"] = "OLTP"
+                elif "olap" in line.lower():
+                    result["workload_type"] = "OLAP"
+                elif "mixed" in line.lower():
+                    result["workload_type"] = "Mixed"
+            
+            if "complexity" in line.lower():
+                if "high" in line.lower():
+                    result["complexity"] = "High"
+                elif "low" in line.lower():
+                    result["complexity"] = "Low"
+                else:
+                    result["complexity"] = "Medium"
+            
+            # Extract recommendations, bottlenecks, risks
+            if any(marker in line for marker in ['•', '-', '*', '1.', '2.', '3.']):
+                clean_line = line.strip('•-* \t0123456789.').strip()
+                if clean_line:
+                    if "recommend" in current_section.lower():
+                        result["recommendations"].append(clean_line)
+                    elif "bottleneck" in current_section.lower() or "performance" in current_section.lower():
+                        result["bottlenecks"].append(clean_line)
+                    elif "risk" in current_section.lower():
+                        result["risks"].append(clean_line)
+            
+            # Track current section
+            if ":" in line:
+                current_section = line
+        
+        # Ensure we have some content
+        if not result["recommendations"]:
+            result["recommendations"] = [
+                "Consider Aurora for improved performance and cost efficiency",
+                "Implement read replicas for better read performance",
+                "Use GP3 storage for cost optimization",
+                "Enable Performance Insights for monitoring"
+            ]
+        
+        if not result["bottlenecks"]:
+            result["bottlenecks"] = [
+                "CPU utilization may peak during business hours",
+                "Storage IOPS might be a limiting factor",
+                "Network bandwidth could impact data transfer"
+            ]
+        
+        if not result["risks"]:
+            result["risks"] = [
+                "Application compatibility testing required",
+                "Data migration complexity for large datasets",
+                "Downtime during cutover process"
+            ]
+        
+        return result
+    
+    def _parse_migration_strategy(self, response_text: str) -> dict:
+        """Parse migration strategy response"""
+        return {
+            "phases": [
+                "Assessment and Planning",
+                "Environment Setup and Testing", 
+                "Data Migration and Validation",
+                "Application Migration",
+                "Go-Live and Optimization"
+            ],
+            "timeline": "14-18 weeks",
+            "resources": [
+                "Database Migration Specialist",
+                "Cloud Architect", 
+                "DevOps Engineer",
+                "Application Developer",
+                "Project Manager"
+            ],
+            "risks": [
+                "Data consistency during migration",
+                "Application compatibility issues",
+                "Performance degradation post-migration"
+            ],
+            "tools": [
+                "AWS Database Migration Service (DMS)",
+                "AWS Schema Conversion Tool (SCT)",
+                "CloudFormation for infrastructure",
+                "CloudWatch for monitoring"
+            ],
+            "checklist": [
+                "Complete application dependency mapping",
+                "Set up target AWS environment",
+                "Configure monitoring and alerting",
+                "Establish rollback procedures",
+                "Plan communication strategy"
+            ],
+            "full_strategy": response_text
+        }
+    
+    def _parse_predictions(self, response_text: str) -> dict:
+        """Parse prediction response"""
+        return {
+            "cpu_trend": "Gradual increase expected",
+            "memory_trend": "Stable with seasonal peaks", 
+            "storage_trend": "Linear growth with data retention",
+            "cost_trend": "Optimized through right-sizing",
+            "confidence": "High (85-90%)",
+            "key_factors": [
+                "Business growth projections",
+                "Technology adoption patterns",
+                "Seasonal usage variations",
+                "Regulatory requirements"
+            ],
+            "recommendations": [
+                "Plan for 20% capacity buffer",
+                "Implement auto-scaling policies",
+                "Review and optimize quarterly",
+                "Consider reserved instances for predictable workloads"
+            ],
+            "full_prediction": response_text
+        }
+
+class EnhancedRDSCalculator:
+    """Enhanced RDS calculator with AI integration"""
+    
+    def __init__(self):
+        self.engines = ['oracle-ee', 'oracle-se', 'postgres', 'aurora-postgresql', 'aurora-mysql', 'sqlserver']
+        self.regions = ["us-east-1", "us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
+        
+        # Instance database with expanded options
+        self.instance_db = {
+            "us-east-1": {
+                "oracle-ee": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.136}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.475}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.95}},
+                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 1.90}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.60}},
+                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 1.20}},
+                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.92}}
+                ],
+                "aurora-postgresql": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
+                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
+                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.14}},
+                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
+                ],
+                "postgres": [
+                    {"type": "db.t3.micro", "vCPU": 2, "memory": 1, "pricing": {"ondemand": 0.0255}},
+                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.051}},
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.102}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.192}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.384}},
+                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 0.768}}
+                ],
+                "sqlserver": [
+                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.231}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.693}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 1.386}},
+                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 2.772}}
+                ],
+                "aurora-mysql": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
+                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
+                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
+                ],
+                "oracle-se": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.105}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.365}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.730}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.462}}
+                ]
+            }
+        }
+        
+        # Environment profiles
+        self.env_profiles = {
+            "PROD": {"cpu_factor": 1.0, "storage_factor": 1.0, "ha_required": True},
+            "STAGING": {"cpu_factor": 0.8, "storage_factor": 0.7, "ha_required": True},
+            "QA": {"cpu_factor": 0.6, "storage_factor": 0.5, "ha_required": False},
+            "DEV": {"cpu_factor": 0.4, "storage_factor": 0.3, "ha_required": False}
+        }
+        
+        # Add other regions with regional pricing adjustments
+        for region in ["us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]:
+            if region not in self.instance_db:
+                self.instance_db[region] = {}
+                for engine, instances in self.instance_db["us-east-1"].items():
+                    # Apply regional pricing multiplier
+                    multiplier = self._get_regional_multiplier(region)
+                    regional_instances = []
+                    for instance in instances:
+                        regional_instance = instance.copy()
+                        regional_instance["pricing"] = {
+                            "ondemand": instance["pricing"]["ondemand"] * multiplier
+                        }
+                        regional_instances.append(regional_instance)
+                    self.instance_db[region][engine] = regional_instances
+    
+    def _get_regional_multiplier(self, region: str) -> float:
+        """Get regional pricing multiplier"""
+        multipliers = {
+            "us-east-1": 1.0,
+            "us-west-1": 1.08,
+            "us-west-2": 1.05,
+            "eu-west-1": 1.12,
+            "ap-southeast-1": 1.15
+        }
+        return multipliers.get(region, 1.0)
+    
+    def calculate_requirements(self, inputs: dict, env: str) -> dict:
+        """Calculate resource requirements with AI-enhanced logic"""
+        profile = self.env_profiles[env]
+        
+        # Calculate resources with intelligent scaling
+        base_vcpus = inputs['cores'] * (inputs['cpu_util'] / 100)
+        base_ram = inputs['ram'] * (inputs['ram_util'] / 100)
+        
+        # Apply environment factors
+        if env == "PROD":
+            vcpus = max(4, int(base_vcpus * profile['cpu_factor'] * 1.2))
+            ram = max(8, int(base_ram * profile['cpu_factor'] * 1.2))
+            storage = max(100, int(inputs['storage'] * profile['storage_factor'] * 1.3))
+        elif env == "STAGING":
+            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
+            ram = max(4, int(base_ram * profile['cpu_factor']))
+            storage = max(50, int(inputs['storage'] * profile['storage_factor']))
+        elif env == "QA":
+            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
+            ram = max(4, int(base_ram * profile['cpu_factor']))
+            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
+        else:  # DEV
+            vcpus = max(1, int(base_vcpus * profile['cpu_factor']))
+            ram = max(2, int(base_ram * profile['cpu_factor']))
+            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
+        
+        # Apply growth projections only for PROD and STAGING
+        if env in ["PROD", "STAGING"]:
+            growth_factor = (1 + inputs['growth']/100) ** 2
+            storage = int(storage * growth_factor)
+            
+        # Select optimal instance
         instance = self._select_optimal_instance(vcpus, ram, inputs['engine'], inputs['region'], env)
         
         # Calculate costs
@@ -1627,7 +1967,8 @@ def render_cost_analysis_tab(recommendations, inputs):
     with savings_cols[2]:
         st.metric("Monthly Savings", f"${monthly_savings:,.0f}", delta=f"{(monthly_savings/onprem_monthly)*100:.0f}%")
     with savings_cols[3]:
-        st.metric("Annual Savings", f"${annual_savings:,.0f}")
+        payback_months = (total_monthly * 0.1) / (total_savings / 12) if total_savings > 0 else 0
+        st.metric("ROI Payback", f"{payback_months:.0f} months" if payback_months > 0 else "Immediate")
     
     # 3-year projection
     st.markdown("##### 📈 3-Year Cost Projection")
@@ -2736,355 +3077,4 @@ def render_footer():
 # Run the application
 if __name__ == "__main__":
     main()
-    render_footer() 
-        ai_analysis = self._parse_ai_response(message.content[0].text)
-        return ai_analysis
-            
-        except Exception as e:
-            return {"error": f"AI analysis failed: {str(e)}"}
-    
-    def generate_migration_strategy(self, analysis_data: dict) -> dict:
-        """Generate detailed migration strategy with AI insights"""
-        
-        prompt = f"""
-        Based on the database analysis, create a comprehensive migration strategy:
-
-        Analysis Summary: 
-        - Engine: {analysis_data.get('engine', 'Unknown')}
-        - Estimated Cost: ${analysis_data.get('monthly_cost', 0):,.2f}/month
-        - Complexity: Medium to High
-
-        Please provide:
-        1. Pre-migration checklist and requirements
-        2. Detailed migration phases with timelines
-        3. Resource allocation recommendations
-        4. Testing and validation strategy
-        5. Rollback procedures
-        6. Post-migration optimization steps
-        7. Monitoring and alerting setup
-        8. Security and compliance considerations
-
-        Include specific AWS services, tools, and best practices.
-        """
-        
-        try:
-            message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=2500,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            
-            return self._parse_migration_strategy(message.content[0].text)
-            
-        except Exception as e:
-            return {"error": f"Migration strategy generation failed: {str(e)}"}
-    
-    def predict_future_requirements(self, historical_data: dict, years: int = 3) -> dict:
-        """Predict future resource requirements using AI"""
-        
-        prompt = f"""
-        As a data scientist specializing in capacity planning, analyze these metrics and predict future requirements:
-
-        Current Configuration:
-        - CPU Cores: {historical_data.get('cores')}
-        - RAM: {historical_data.get('ram')} GB
-        - Storage: {historical_data.get('storage')} GB
-        - Growth Rate: {historical_data.get('growth')}% annually
-        - Engine: {historical_data.get('engine')}
-
-        Prediction Period: {years} years
-
-        Consider:
-        - Technology evolution impact
-        - Business scaling factors
-        - Industry benchmarks for {historical_data.get('engine')} workloads
-
-        Provide predictions for:
-        - CPU requirements
-        - Memory usage
-        - Storage growth
-        - IOPS scaling
-        - Cost projections
-
-        Include key assumptions and confidence levels.
-        """
-        
-        try:
-            message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=2000,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            
-            return self._parse_predictions(message.content[0].text)
-            
-        except Exception as e:
-            return {"error": f"Prediction generation failed: {str(e)}"}
-    
-    def _parse_ai_response(self, response_text: str) -> dict:
-        """Parse AI response into structured data"""
-        # Extract key insights from the response
-        lines = response_text.split('\n')
-        
-        # Default structure
-        result = {
-            "workload_type": "Mixed",
-            "complexity": "Medium",
-            "timeline": "12-16 weeks",
-            "bottlenecks": [],
-            "recommendations": [],
-            "risks": [],
-            "summary": response_text[:500] + "..." if len(response_text) > 500 else response_text
-        }
-        
-        # Parse specific sections
-        current_section = ""
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-                
-            # Identify sections
-            if "workload" in line.lower() and ("classification" in line.lower() or "type" in line.lower()):
-                if "oltp" in line.lower():
-                    result["workload_type"] = "OLTP"
-                elif "olap" in line.lower():
-                    result["workload_type"] = "OLAP"
-                elif "mixed" in line.lower():
-                    result["workload_type"] = "Mixed"
-            
-            if "complexity" in line.lower():
-                if "high" in line.lower():
-                    result["complexity"] = "High"
-                elif "low" in line.lower():
-                    result["complexity"] = "Low"
-                else:
-                    result["complexity"] = "Medium"
-            
-            # Extract recommendations, bottlenecks, risks
-            if any(marker in line for marker in ['•', '-', '*', '1.', '2.', '3.']):
-                clean_line = line.strip('•-* \t0123456789.').strip()
-                if clean_line:
-                    if "recommend" in current_section.lower():
-                        result["recommendations"].append(clean_line)
-                    elif "bottleneck" in current_section.lower() or "performance" in current_section.lower():
-                        result["bottlenecks"].append(clean_line)
-                    elif "risk" in current_section.lower():
-                        result["risks"].append(clean_line)
-            
-            # Track current section
-            if ":" in line:
-                current_section = line
-        
-        # Ensure we have some content
-        if not result["recommendations"]:
-            result["recommendations"] = [
-                "Consider Aurora for improved performance and cost efficiency",
-                "Implement read replicas for better read performance",
-                "Use GP3 storage for cost optimization",
-                "Enable Performance Insights for monitoring"
-            ]
-        
-        if not result["bottlenecks"]:
-            result["bottlenecks"] = [
-                "CPU utilization may peak during business hours",
-                "Storage IOPS might be a limiting factor",
-                "Network bandwidth could impact data transfer"
-            ]
-        
-        if not result["risks"]:
-            result["risks"] = [
-                "Application compatibility testing required",
-                "Data migration complexity for large datasets",
-                "Downtime during cutover process"
-            ]
-        
-        return result
-    
-    def _parse_migration_strategy(self, response_text: str) -> dict:
-        """Parse migration strategy response"""
-        return {
-            "phases": [
-                "Assessment and Planning",
-                "Environment Setup and Testing", 
-                "Data Migration and Validation",
-                "Application Migration",
-                "Go-Live and Optimization"
-            ],
-            "timeline": "14-18 weeks",
-            "resources": [
-                "Database Migration Specialist",
-                "Cloud Architect", 
-                "DevOps Engineer",
-                "Application Developer",
-                "Project Manager"
-            ],
-            "risks": [
-                "Data consistency during migration",
-                "Application compatibility issues",
-                "Performance degradation post-migration"
-            ],
-            "tools": [
-                "AWS Database Migration Service (DMS)",
-                "AWS Schema Conversion Tool (SCT)",
-                "CloudFormation for infrastructure",
-                "CloudWatch for monitoring"
-            ],
-            "checklist": [
-                "Complete application dependency mapping",
-                "Set up target AWS environment",
-                "Configure monitoring and alerting",
-                "Establish rollback procedures",
-                "Plan communication strategy"
-            ],
-            "full_strategy": response_text
-        }
-    
-    def _parse_predictions(self, response_text: str) -> dict:
-        """Parse prediction response"""
-        return {
-            "cpu_trend": "Gradual increase expected",
-            "memory_trend": "Stable with seasonal peaks", 
-            "storage_trend": "Linear growth with data retention",
-            "cost_trend": "Optimized through right-sizing",
-            "confidence": "High (85-90%)",
-            "key_factors": [
-                "Business growth projections",
-                "Technology adoption patterns",
-                "Seasonal usage variations",
-                "Regulatory requirements"
-            ],
-            "recommendations": [
-                "Plan for 20% capacity buffer",
-                "Implement auto-scaling policies",
-                "Review and optimize quarterly",
-                "Consider reserved instances for predictable workloads"
-            ],
-            "full_prediction": response_text
-        }
-
-class EnhancedRDSCalculator:
-    """Enhanced RDS calculator with AI integration"""
-    
-    def __init__(self):
-        self.engines = ['oracle-ee', 'oracle-se', 'postgres', 'aurora-postgresql', 'aurora-mysql', 'sqlserver']
-        self.regions = ["us-east-1", "us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
-    def __init__(self):
-        self.engines = ['oracle-ee', 'oracle-se', 'postgres', 'aurora-postgresql', 'aurora-mysql', 'sqlserver']
-        self.regions = ["us-east-1", "us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
-        
-        # Instance database with expanded options
-        self.instance_db = {
-            "us-east-1": {
-                "oracle-ee": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.136}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.475}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.95}},
-                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 1.90}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.60}},
-                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 1.20}},
-                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.92}}
-                ],
-                "aurora-postgresql": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
-                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
-                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.14}},
-                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
-                ],
-                "postgres": [
-                    {"type": "db.t3.micro", "vCPU": 2, "memory": 1, "pricing": {"ondemand": 0.0255}},
-                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.051}},
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.102}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.192}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.384}},
-                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 0.768}}
-                ],
-                "sqlserver": [
-                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.231}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.693}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 1.386}},
-                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 2.772}}
-                ],
-                "aurora-mysql": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
-                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
-                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
-                ],
-                "oracle-se": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.105}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.365}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.730}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.462}}
-                ]
-            }
-        }
-        
-        # Environment profiles
-        self.env_profiles = {
-            "PROD": {"cpu_factor": 1.0, "storage_factor": 1.0, "ha_required": True},
-            "STAGING": {"cpu_factor": 0.8, "storage_factor": 0.7, "ha_required": True},
-            "QA": {"cpu_factor": 0.6, "storage_factor": 0.5, "ha_required": False},
-            "DEV": {"cpu_factor": 0.4, "storage_factor": 0.3, "ha_required": False}
-        }
-        
-        # Add other regions with regional pricing adjustments
-        for region in ["us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]:
-            if region not in self.instance_db:
-                self.instance_db[region] = {}
-                for engine, instances in self.instance_db["us-east-1"].items():
-                    # Apply regional pricing multiplier
-                    multiplier = self._get_regional_multiplier(region)
-                    regional_instances = []
-                    for instance in instances:
-                        regional_instance = instance.copy()
-                        regional_instance["pricing"] = {
-                            "ondemand": instance["pricing"]["ondemand"] * multiplier
-                        }
-                        regional_instances.append(regional_instance)
-                    self.instance_db[region][engine] = regional_instances
-    
-    def _get_regional_multiplier(self, region: str) -> float:
-        """Get regional pricing multiplier"""
-        multipliers = {
-            "us-east-1": 1.0,
-            "us-west-1": 1.08,
-            "us-west-2": 1.05,
-            "eu-west-1": 1.12,
-            "ap-southeast-1": 1.15
-        }
-        return multipliers.get(region, 1.0)
-    
-    def calculate_requirements(self, inputs: dict, env: str) -> dict:
-        """Calculate resource requirements with AI-enhanced logic"""
-        profile = self.env_profiles[env]
-        
-        # Calculate resources with intelligent scaling
-        base_vcpus = inputs['cores'] * (inputs['cpu_util'] / 100)
-        base_ram = inputs['ram'] * (inputs['ram_util'] / 100)
-        
-        # Apply environment factors
-        if env == "PROD":
-            vcpus = max(4, int(base_vcpus * profile['cpu_factor'] * 1.2))
-            ram = max(8, int(base_ram * profile['cpu_factor'] * 1.2))
-            storage = max(100, int(inputs['storage'] * profile['storage_factor'] * 1.3))
-        elif env == "STAGING":
-            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
-            ram = max(4, int(base_ram * profile['cpu_factor']))
-            storage = max(50, int(inputs['storage'] * profile['storage_factor']))
-        elif env == "QA":
-            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
-            ram = max(4, int(base_ram * profile['cpu_factor']))
-            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
-        else:  # DEV
-            vcpus = max(1, int(base_vcpus * profile['cpu_factor']))
-            ram = max(2, int(base_ram * profile['cpu_factor']))
-            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
-        
-        # Apply growth projections only for PROD and STAGING
-        if env in ["PROD", "STAGING"]:
-            growth_factor = (1 + inputs['growth']/100) ** 2
-            storage = int(storage * growth_factor)
-        
-        #
+    render_footer()
