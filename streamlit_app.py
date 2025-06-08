@@ -44,22 +44,46 @@ st.markdown("""
         max-width: 1400px; /* Overall max width for the entire app content */
         margin: 0 auto; /* Center the entire app */
         padding: 0 1rem; /* Add some horizontal padding */
+        display: flex; /* Make stApp a flex container */
+        flex-direction: column; /* Stack children vertically */
+        min-height: 100vh; /* Ensure it takes full viewport height */
     }
 
-    /* Main block container for content */
+    /* Target the main content area wrapper when a sidebar is present */
+    /* This aims to remove default Streamlit padding that pushes content */
+    .stApp > header + div { /* Selects the div directly after the header (which is the main content wrapper) */
+        padding-left: 0rem !important;
+        padding-right: 0rem !important;
+    }
+
+    /* The 'main' area container that holds the block-container */
+    .main {
+        flex-grow: 1; /* Allow the main content area to take available space */
+        width: 100%; /* Ensure it takes full width */
+        margin: 0; /* Remove default margins */
+        padding: 0; /* Remove default padding */
+        box-sizing: border-box; /* Include padding and border in the element's total width */
+    }
+
+    /* Main block container for content - should fill the space provided by stApp or .main */
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 2rem;
-        max-width: 100% !important; /* Allow the content block to take full width of .stApp */
-        padding-left: 0rem; /* Remove default padding to allow more space for content */
-        padding-right: 0rem; /* Remove default padding */
+        max-width: 100% !important; /* Ensure it takes full width of its parent */
+        padding-left: 1rem; /* Re-add controlled padding for inner content */
+        padding-right: 1rem; /* Re-add controlled padding for inner content */
         margin: 0 auto; /* Ensure it stays centered within the app */
+        box-sizing: border-box; /* Crucial for consistent sizing */
     }
     
     /* Ensure Streamlit elements respect container width */
-    .stDataFrame, .stPlotlyChart, .stImage, .stVideo, .stAudio, .stExpander, .stTabs, .stColumns, .stAlert, .stSuccess, .stWarning, .stError, .stInfo {
+    .stDataFrame, .stPlotlyChart, .stImage, .stVideo, .stAudio, .stExpander, .stTabs, .stColumns, 
+    .stAlert, .stSuccess, .stWarning, .stError, .stInfo, .stProgress, .stMarkdown, .stText, .stJson, .stCode, .stTable, .stChart,
+    div[data-testid="stHorizontalBlock"] { /* Target horizontal blocks (like st.columns) */
         width: 100% !important;
         box-sizing: border-box; /* Include padding and border in the element's total width and height */
+        margin-left: auto !important; /* Ensure content is centered if possible */
+        margin-right: auto !important;
     }
 
     /* Header styling */
@@ -1029,7 +1053,7 @@ def parse_uploaded_file(uploaded_file):
                     'region': str(row['region']),
                     'cores': int(row['cores']),
                     'cpu_util': int(row.get('cpu_util', 65)),
-                    'ram': int(row['ram']),
+                    'ram': int(row.get('ram', 0)), # Ensure RAM is handled safely
                     'ram_util': int(row.get('ram_util', 75)),
                     'storage': int(row.get('storage', 100)), # Default to 100 if missing
                     'iops': int(row.get('iops', 8000)),
