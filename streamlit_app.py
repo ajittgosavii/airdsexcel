@@ -33,21 +33,20 @@ st.markdown("""
     
     /* Fix main container layout issues */
     .main .block-container {
-        padding-top: 2rem;
-        padding-left: 1rem;
-        padding-right: 1rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
         max-width: 100%;
         margin: 0 auto;
     }
     
     /* Fix content alignment */
-    .stApp > .main {
+    .stApp {
         padding: 0;
         margin: 0;
     }
     
     /* Ensure full width usage */
-    .element-container {
+    .stContainer {
         width: 100%;
         margin: 0;
     }
@@ -55,70 +54,66 @@ st.markdown("""
     /* Header styling with proper containment */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 3rem 2rem;
-        border-radius: 15px;
+        padding: 1.5rem 1rem;
+        border-radius: 10px;
         text-align: center;
         color: white;
-        margin: 0 0 2rem 0;
-        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        margin: 0 0 1.5rem 0;
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
         width: 100%;
-        box-sizing: border-box;
     }
     
     .ai-badge {
         background: rgba(255,255,255,0.25);
-        padding: 0.75rem 1.5rem;
-        border-radius: 25px;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
         display: inline-block;
-        margin-bottom: 1rem;
-        font-size: 0.95rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
         font-weight: 600;
-        backdrop-filter: blur(10px);
     }
     
     .main-header h1 {
-        font-size: 3rem;
+        font-size: 1.8rem;
         font-weight: 700;
-        margin: 1rem 0;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin: 0.5rem 0;
     }
     
     .main-header p {
-        font-size: 1.2rem;
+        font-size: 1rem;
         opacity: 0.9;
         max-width: 800px;
         margin: 0 auto;
-        line-height: 1.6;
+        line-height: 1.5;
     }
     
     /* Metric cards with proper spacing */
     .metric-card {
         background: white;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
         border: 1px solid #e2e8f0;
         margin-bottom: 1rem;
         text-align: center;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
         width: 100%;
-        box-sizing: border-box;
     }
     
     .metric-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
     }
     
     .metric-value {
-        font-size: 2.5rem;
+        font-size: 1.5rem;
         font-weight: 700;
         color: #1a202c;
-        margin: 0.5rem 0;
+        margin: 0.25rem 0;
     }
     
     .metric-label {
-        font-size: 1rem;
+        font-size: 0.85rem;
         color: #718096;
         font-weight: 500;
         text-transform: uppercase;
@@ -126,45 +121,36 @@ st.markdown("""
     }
     
     .metric-subtitle {
-        font-size: 0.9rem;
+        font-size: 0.8rem;
         color: #a0aec0;
-        margin-top: 0.5rem;
+        margin-top: 0.25rem;
     }
     
     /* AI insight cards with proper containment */
     .ai-insight {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         border: 2px solid #0ea5e9;
-        border-radius: 15px;
-        padding: 2rem;
-        margin: 1.5rem 0;
-        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        box-shadow: 0 3px 10px rgba(14, 165, 233, 0.1);
         width: 100%;
-        box-sizing: border-box;
     }
     
     .ai-insight h4 {
         color: #0c4a6e;
-        margin-bottom: 1rem;
-        font-size: 1.3rem;
-        font-weight: 600;
-    }
-    
-    .ai-insight h5 {
-        color: #0369a1;
-        margin: 1rem 0 0.5rem 0;
+        margin-bottom: 0.75rem;
         font-size: 1.1rem;
         font-weight: 600;
     }
     
     /* Status cards with proper width */
     .status-card {
-        padding: 1.5rem;
-        border-radius: 12px;
-        margin: 1rem 0;
-        border-left: 5px solid;
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 0.75rem 0;
+        border-left: 4px solid;
         width: 100%;
-        box-sizing: border-box;
     }
     
     .status-success {
@@ -194,19 +180,18 @@ st.markdown("""
     /* Configuration section with proper containment */
     .config-section {
         background: #f8fafc;
-        padding: 2rem;
-        border-radius: 12px;
+        padding: 1.5rem;
+        border-radius: 10px;
         border: 1px solid #e2e8f0;
-        margin: 1rem 0;
+        margin: 0.75rem 0;
         width: 100%;
-        box-sizing: border-box;
     }
     
     .config-header {
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         font-weight: 600;
         color: #2d3748;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
@@ -214,21 +199,20 @@ st.markdown("""
     
     /* Tab styling fixes */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 0.5rem;
+        gap: 0.25rem;
         background: #f8fafc;
-        padding: 0.5rem;
-        border-radius: 10px;
+        padding: 0.25rem;
+        border-radius: 8px;
         width: 100%;
-        overflow-x: auto;
     }
     
     .stTabs [data-baseweb="tab"] {
         background: white;
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
         border: 1px solid #e2e8f0;
         font-weight: 500;
-        white-space: nowrap;
+        font-size: 0.9rem;
     }
     
     .stTabs [aria-selected="true"] {
@@ -240,64 +224,63 @@ st.markdown("""
     /* Footer styling with proper containment */
     .footer-content {
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        padding: 3rem 2rem;
-        border-radius: 15px;
+        padding: 1.5rem;
+        border-radius: 12px;
         text-align: center;
-        margin-top: 3rem;
+        margin-top: 2rem;
         border: 1px solid #e2e8f0;
         width: 100%;
-        box-sizing: border-box;
     }
     
     .footer-content h3 {
         color: #2d3748;
-        margin-bottom: 1rem;
-        font-size: 1.8rem;
+        margin-bottom: 0.75rem;
+        font-size: 1.4rem;
         font-weight: 700;
     }
     
     .feature-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin: 2rem 0;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 0.75rem;
+        margin: 1.5rem 0;
         text-align: center;
         width: 100%;
     }
     
     .feature-item {
         background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
+        padding: 1rem;
+        border-radius: 8px;
         border: 1px solid #e2e8f0;
         font-weight: 500;
         color: #4a5568;
+        font-size: 0.9rem;
     }
     
     /* Analysis grid with proper responsive layout */
     .analysis-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 1.5rem;
-        margin: 1.5rem 0;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1rem;
+        margin: 1rem 0;
         width: 100%;
     }
     
     .analysis-card {
         background: white;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1.5rem;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        border-radius: 10px;
+        padding: 1rem;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.05);
         width: 100%;
-        box-sizing: border-box;
     }
     
     .analysis-card h6 {
         color: #2d3748;
-        font-size: 1.1rem;
+        font-size: 0.95rem;
         font-weight: 600;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
     }
     
     /* Button styling fixes */
@@ -305,21 +288,17 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
         font-weight: 600;
         transition: all 0.2s ease;
         width: 100%;
+        font-size: 0.9rem;
     }
     
     .stButton > button:hover {
         transform: translateY(-1px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Sidebar styling fixes */
-    .css-1d391kg {
-        background: #f8fafc;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
     }
     
     /* Progress bar styling */
@@ -329,44 +308,42 @@ st.markdown("""
     
     /* DataFrame styling with proper width */
     .dataframe {
-        border-radius: 10px;
+        border-radius: 8px;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
         width: 100%;
+        font-size: 0.9rem;
     }
     
     /* Fix column layout issues */
-    .row-widget.stSelectbox > div,
-    .row-widget.stNumberInput > div,
-    .row-widget.stSlider > div,
-    .row-widget.stTextInput > div {
+    .stSelectbox, .stNumberInput, .stSlider, .stTextInput {
         width: 100%;
     }
     
     /* Responsive design improvements */
     @media (max-width: 768px) {
         .main-header {
-            padding: 2rem 1rem;
+            padding: 1rem 0.5rem;
         }
         
         .main-header h1 {
-            font-size: 2rem;
+            font-size: 1.5rem;
         }
         
         .main-header p {
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         
         .metric-card {
-            padding: 1.5rem;
+            padding: 1rem;
         }
         
         .ai-insight {
-            padding: 1.5rem;
+            padding: 1rem;
         }
         
         .config-section {
-            padding: 1.5rem;
+            padding: 1rem;
         }
         
         .feature-grid {
@@ -384,41 +361,25 @@ st.markdown("""
     }
     
     /* Fix any overflow issues */
-    body, html {
-        overflow-x: hidden;
-    }
-    
     .stApp {
         overflow-x: hidden;
     }
     
     /* Ensure proper container behavior */
-    .main .block-container {
+    .stApp > div {
         overflow-x: hidden;
     }
     
     /* Fix specific Streamlit column issues */
     .stColumns {
-        gap: 1rem;
+        gap: 0.75rem;
     }
     
     .stColumn {
-        padding: 0 0.5rem;
-    }
-    
-    /* Override any problematic Streamlit defaults */
-    .element-container,
-    .stMarkdown,
-    .stSelectbox,
-    .stNumberInput,
-    .stSlider,
-    .stButton {
-        width: 100% !important;
-        max-width: 100% !important;
+        padding: 0 0.25rem;
     }
 </style>
 """, unsafe_allow_html=True)
-
 class AIAnalytics:
     """AI-powered analytics engine using Claude API"""
     
