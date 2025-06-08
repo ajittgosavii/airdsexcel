@@ -408,7 +408,7 @@ class AIAnalytics:
 
         try:
             message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
+                model="claude-3-5-sonnet-20240620", # Updated model
                 max_tokens=2000,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -450,7 +450,7 @@ class AIAnalytics:
         
         try:
             message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
+                model="claude-3-5-sonnet-20240620", # Updated model
                 max_tokens=2500,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -496,7 +496,7 @@ class AIAnalytics:
         
         try:
             message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
+                model="claude-3-5-sonnet-20240620", # Updated model
                 max_tokens=2000,
                 messages=[{"role": "user", "content": prompt}]
             )
@@ -2848,16 +2848,16 @@ def display_single_database_analysis(result, db_number):
         config_comparison = pd.DataFrame({
             "Metric": ["CPU Cores", "RAM (GB)", "Storage (GB)", "Peak CPU %", "Peak RAM %"],
             "Current": [
-                inputs.get('cores', 0),
-                inputs.get('ram', 0),
-                inputs.get('storage', 0),
+                str(inputs.get('cores', 0)), # Cast to string
+                str(inputs.get('ram', 0)), # Cast to string
+                str(inputs.get('storage', 0)), # Cast to string
                 f"{inputs.get('cpu_util', 0)}%",
                 f"{inputs.get('ram_util', 0)}%"
             ],
             "Recommended (PROD)": [
-                recommendations['PROD']['vcpus'],
-                recommendations['PROD']['ram_gb'],
-                recommendations['PROD']['storage_gb'],
+                str(recommendations['PROD']['vcpus']), # Cast to string
+                str(recommendations['PROD']['ram_gb']), # Cast to string
+                str(recommendations['PROD']['storage_gb']), # Cast to string
                 "N/A",
                 "N/A"
             ]
