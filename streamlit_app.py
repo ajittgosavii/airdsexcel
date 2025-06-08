@@ -1468,13 +1468,13 @@ def initialize_session_state():
 
 def main():
     """Main application function"""
-           st.title("🤖 AI Database Migration Studio")
+    st.title("🤖 AI Database Migration Studio")
 
     # --- Diagnostic: Check session state ---
-           st.write("Current session state:", st.session_state)
+    st.write("Current session state:", st.session_state)
 
     # --- Google Authentication Integration ---
-        if 'user_info' not in st.session_state:
+    if 'user_info' not in st.session_state:
         st.info("Please log in with your Google account to access the AI Database Migration Studio.")
 
         # NOTE: The redirect_uri must be passed to the authorize_button method.
