@@ -609,7 +609,25 @@ def parse_uploaded_file(uploaded_file):
         else:
             df = pd.read_excel(uploaded_file)
         
-        # Expected columns
+        # Column mapping for different naming conventions
+        column_mapping = {
+            'database_name': 'db_name',
+            'database_engine': 'engine', 
+            'aws_region': 'region',
+            'cpu_cores': 'cores',
+            'cpu_utilization': 'cpu_util',
+            'ram_gb': 'ram',
+            'ram_utilization': 'ram_util',
+            'storage_gb': 'storage',
+            'growth_rate': 'growth',
+            'projection_years': 'years',
+            'data_transfer_gb': 'data_transfer_gb'
+        }
+        
+        # Rename columns to match expected format
+        df = df.rename(columns=column_mapping)
+        
+        # Expected columns (after mapping)
         required_columns = ['db_name', 'engine', 'region', 'cores', 'ram', 'storage']
         
         # Check for required columns
