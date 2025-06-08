@@ -2735,7 +2735,7 @@ def render_footer():
 # Run the application
 if __name__ == "__main__":
     main()
-    render_footer() Parse AI response
+    render_footer() #Parse AI response
             ai_analysis = self._parse_ai_response(message.content[0].text)
             return ai_analysis
             
