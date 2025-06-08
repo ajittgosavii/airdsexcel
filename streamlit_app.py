@@ -51,7 +51,7 @@ if not CLIENT_ID or not CLIENT_SECRET or not REDIRECT_URI:
 oauth2 = OAuth2Component( # This line was changed from OAuth2 to OAuth2Component
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET,
-    #redirect_uri=GOOGLE_REDIRECT_URI,
+    redirect_uri=REDIRECT_URI,
     authorize_endpoint=AUTHORIZE_URL,
     token_endpoint=TOKEN_URL,
     #scope=["openid", "email", "profile"], # Required scopes for Google
@@ -1478,10 +1478,41 @@ def initialize_session_state():
     if 'last_analysis_results' not in st.session_state:
         st.session_state.last_analysis_results = None
 
+def handle_authentication():
+    # Check if token exists in session state
+    if 'token' not in st.session_state:
+        # If not, check query parameters for auth code
+        query_params = st.experimental_get_query_params()
+        code = query_params.get('code', [None])[0]
+        state = query_params.get('state', [None])[0]
+        
+        if code and state:
+            # Exchange code for token
+            try:
+                token = oauth2.exchange_code(code, state)
+                st.session_state.token = token
+                st.experimental_set_query_params()  # Clear query params
+            except Exception as e:
+                st.error(f"Authentication failed: {str(e)}")
+        else:
+            # Show login button
+            auth_url = oauth2.get_authorization_url()
+            st.markdown(f'<a href="{auth_url}" target="_self">Login with Google</a>', unsafe_allow_html=True)
+            st.stop()
+    
+    # If token exists, show app content
+    if 'token' in st.session_state:
+        return True
+    return False
+
+
 def main():
     """Main application function"""
     initialize_session_state()
-    
+   # First check authentication
+    if not handle_authentication():
+        st.warning("Please authenticate to continue")
+        return
     # Header
     st.markdown("""
     <div class="main-header">
