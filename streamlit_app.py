@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 import anthropic
+from anthropic import APIStatusError # Import specific error type
 import json
 import time
 import traceback
@@ -27,6 +28,7 @@ st.markdown("""
     /* Reset and base styles */
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        overflow-x: hidden; /* Prevent horizontal scrolling */
     }
     
     /* Hide Streamlit default elements */
@@ -39,10 +41,16 @@ st.markdown("""
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 2rem;
-        max-width: 95%;
-        margin: 0 auto; /* Added to center the content block */
+        max-width: 95%; /* Keep max-width to ensure content doesn't stretch too wide */
+        margin: 0 auto; /* Center the content block */
     }
     
+    /* Ensure Streamlit elements respect container width */
+    .stDataFrame, .stPlotlyChart {
+        width: 100% !important;
+        box-sizing: border-box; /* Include padding and border in the element's total width and height */
+    }
+
     /* Header styling */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -297,7 +305,7 @@ st.markdown("""
     }
     
     /* Sidebar improvements */
-    .css-1d391kg {
+    .css-1d391kg { /* Target for Streamlit sidebar background */
         background: #f8fafc;
     }
     
@@ -409,6 +417,10 @@ class AIAnalytics:
             ai_analysis = self._parse_ai_response(message.content[0].text)
             return ai_analysis
 
+        except APIStatusError as e:
+            if e.status_code == 401:
+                return {"error": "AI analysis failed: Authentication Error (401). Please check your Claude API key."}
+            return {"error": f"AI analysis failed: {str(e)}"}
         except Exception as e:
             return {"error": f"AI analysis failed: {str(e)}"}
     
@@ -445,6 +457,10 @@ class AIAnalytics:
             
             return self._parse_migration_strategy(message.content[0].text)
             
+        except APIStatusError as e:
+            if e.status_code == 401:
+                return {"error": "Migration strategy generation failed: Authentication Error (401). Please check your Claude API key."}
+            return {"error": f"Migration strategy generation failed: {str(e)}"}
         except Exception as e:
             return {"error": f"Migration strategy generation failed: {str(e)}"}
     
@@ -487,6 +503,10 @@ class AIAnalytics:
             
             return self._parse_predictions(message.content[0].text)
             
+        except APIStatusError as e:
+            if e.status_code == 401:
+                return {"error": "Prediction generation failed: Authentication Error (401). Please check your Claude API key."}
+            return {"error": f"Prediction generation failed: {str(e)}"}
         except Exception as e:
             return {"error": f"Prediction generation failed: {str(e)}"}
     
@@ -1566,6 +1586,8 @@ def analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migr
             try:
                 workload_analysis = st.session_state.ai_analytics.analyze_workload_patterns(inputs)
                 ai_insights['workload'] = workload_analysis
+                if "error" in ai_insights['workload']:
+                    st.error(ai_insights['workload']['error'])
                 time.sleep(2)
             except Exception as e:
                 st.error(f"AI Analysis Error: {str(e)}")
@@ -1580,6 +1602,8 @@ def analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migr
             try:
                 predictions = st.session_state.ai_analytics.predict_future_requirements(inputs, inputs['years'])
                 ai_insights['predictions'] = predictions
+                if "error" in ai_insights['predictions']:
+                    st.error(ai_insights['predictions']['error'])
                 time.sleep(2)
             except Exception as e:
                 st.error(f"Prediction Error: {str(e)}")
@@ -1594,6 +1618,8 @@ def analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migr
             try:
                 migration_strategy = st.session_state.ai_analytics.generate_migration_strategy(recommendations['PROD'])
                 ai_insights['migration'] = migration_strategy
+                if "error" in ai_insights['migration']:
+                    st.error(ai_insights['migration']['error'])
                 time.sleep(2)
             except Exception as e:
                 st.error(f"Migration Strategy Error: {str(e)}")
@@ -2289,7 +2315,10 @@ def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_mi
                     try:
                         workload_analysis = st.session_state.ai_analytics.analyze_workload_patterns(inputs)
                         ai_insights['workload'] = workload_analysis
+                        if "error" in ai_insights['workload']:
+                            st.warning(f"AI Workload Analysis for {db_name}: {ai_insights['workload']['error']}")
                     except Exception as e:
+                        st.warning(f"AI Workload Analysis for {db_name} failed: {str(e)}")
                         ai_insights['workload'] = {"error": str(e)}
                 
                 if enable_predictions:
@@ -2297,7 +2326,10 @@ def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_mi
                     try:
                         predictions = st.session_state.ai_analytics.predict_future_requirements(inputs, inputs.get('years', 3))
                         ai_insights['predictions'] = predictions
+                        if "error" in ai_insights['predictions']:
+                            st.warning(f"AI Predictions for {db_name}: {ai_insights['predictions']['error']}")
                     except Exception as e:
+                        st.warning(f"AI Predictions for {db_name} failed: {str(e)}")
                         ai_insights['predictions'] = {"error": str(e)}
                 
                 if enable_migration_strategy:
@@ -2305,7 +2337,10 @@ def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_mi
                     try:
                         migration_strategy = st.session_state.ai_analytics.generate_migration_strategy(recommendations['PROD'])
                         ai_insights['migration'] = migration_strategy
+                        if "error" in ai_insights['migration']:
+                            st.warning(f"AI Migration Strategy for {db_name}: {ai_insights['migration']['error']}")
                     except Exception as e:
+                        st.warning(f"AI Migration Strategy for {db_name} failed: {str(e)}")
                         ai_insights['migration'] = {"error": str(e)}
             
             all_results.append({
@@ -2506,14 +2541,21 @@ def render_bulk_ai_tab(all_results):
         st.info("🔑 AI analysis requires a Claude API key. Configure in sidebar and re-run analysis for AI insights.")
         return
     
+    # Filter out results where AI insights had an error
+    clean_results = [res for res in all_results if 'workload' in res.get('ai_insights', {}) and 'error' not in res['ai_insights']['workload']]
+
+    if not clean_results:
+        st.info("No valid AI insights available for aggregation (API key might be missing or invalid for all databases).")
+        return
+
     # Aggregate AI insights
     workload_types = {}
     complexity_levels = {}
     all_recommendations = []
     
-    for result in all_results:
+    for result in clean_results:
         ai_insights = result.get('ai_insights', {})
-        if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
+        if 'workload' in ai_insights and 'error' not in ai_insights['workload']: # Re-check inside loop to be safe
             workload = ai_insights['workload']
             
             # Aggregate workload types
@@ -2550,7 +2592,7 @@ def render_bulk_ai_tab(all_results):
             complexity_colors = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#10b981"}
             
             for complexity, count in complexity_levels.items():
-                percentage = (count / len(all_results)) * 100
+                percentage = (count / len(clean_results)) * 100 # Calculate percentage based on clean_results
                 color = complexity_colors.get(complexity, "#64748b")
                 
                 st.markdown(f"""
@@ -2572,7 +2614,7 @@ def render_bulk_ai_tab(all_results):
         with rec_cols[0]:
             for i in range(0, len(top_recs), 2):
                 rec, count = top_recs[i]
-                percentage = (count / len(all_results)) * 100
+                percentage = (count / len(clean_results)) * 100 # Calculate percentage based on clean_results
                 st.markdown(f"""
                 <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
                     <strong>{rec}</strong><br>
@@ -2584,7 +2626,7 @@ def render_bulk_ai_tab(all_results):
             for i in range(1, len(top_recs), 2):
                 if i < len(top_recs):
                     rec, count = top_recs[i]
-                    percentage = (count / len(all_results)) * 100
+                    percentage = (count / len(clean_results)) * 100 # Calculate percentage based on clean_results
                     st.markdown(f"""
                     <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
                         <strong>{rec}</strong><br>
@@ -2663,8 +2705,9 @@ def render_bulk_cost_tab(all_results):
         st.metric("Monthly Savings", f"${total_savings:,.0f}", f"{savings_pct:.0f}%")
     
     with financial_cols[3]:
-        payback_months = (total_monthly * 0.1) / (total_savings / 12) if total_savings > 0 else 0
-        st.metric("ROI Payback", f"{payback_months:.0f} months" if payback_months > 0 else "Immediate")
+        # Adjusted for division by zero if total_savings is 0 or negative (no ROI)
+        payback_months = (total_monthly * 0.1) / (total_savings / 12) if total_savings > 0 else (0 if total_savings == 0 else float('inf'))
+        st.metric("ROI Payback", f"{payback_months:.0f} months" if payback_months > 0 and payback_months != float('inf') else ("Immediate" if payback_months == 0 else "N/A"))
 
 def render_bulk_individual_tab(all_results):
     """Render individual database details from bulk analysis"""
@@ -2771,7 +2814,7 @@ def display_single_database_analysis(result, db_number):
                     for risk in risks[:3]:
                         st.markdown(f"⚠️ {risk}")
         else:
-            st.info("🔑 AI analysis not available. Configure Claude API key for detailed insights.")
+            st.info("🔑 AI analysis not available. Configure Claude API key for detailed insights or check previous errors.")
     
     with detail_tabs[2]:  # Cost Breakdown
         prod_rec = recommendations['PROD']
