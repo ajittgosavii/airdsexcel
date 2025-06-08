@@ -934,7 +934,7 @@ def parse_uploaded_file(uploaded_file):
                     'cpu_util': int(row.get('cpu_util', 65)),
                     'ram': int(row['ram']),
                     'ram_util': int(row.get('ram_util', 75)),
-                    'storage': int(row['storage']),
+                    'storage': int(row.get('storage', 100)), # Default to 100 if missing
                     'iops': int(row.get('iops', 8000)),
                     'growth': float(row.get('growth', 15)),
                     'backup_days': int(row.get('backup_days', 7)),
@@ -1930,7 +1930,7 @@ def render_cost_analysis_tab(recommendations, inputs):
             xaxis_title_font_size=14,
             yaxis_title_font_size=14
         )
-        st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig1, use_container_width=True, config={'responsive': True}) # Added config
     
     with cost_vis_cols[1]:
         # Production cost breakdown
@@ -1948,7 +1948,7 @@ def render_cost_analysis_tab(recommendations, inputs):
             )
             fig2.update_traces(textposition='inside', textinfo='percent+label')
             fig2.update_layout(height=400, title_font_size=16)
-            st.plotly_chart(fig2, use_container_width=True)
+            st.plotly_chart(fig2, use_container_width=True, config={'responsive': True}) # Added config
     
     # Cost comparison with on-premise
     st.markdown("##### 📊 Cost Comparison & Savings Analysis")
@@ -1995,7 +1995,7 @@ def render_cost_analysis_tab(recommendations, inputs):
         labels={'value': 'Annual Cost ($)', 'variable': 'Infrastructure'}
     )
     fig3.update_layout(height=400, title_font_size=16)
-    st.plotly_chart(fig3, use_container_width=True)
+    st.plotly_chart(fig3, use_container_width=True, config={'responsive': True}) # Added config
 
 def render_future_planning_tab(ai_insights, recommendations, inputs):
     """Render future planning insights"""
@@ -2541,7 +2541,7 @@ def render_bulk_ai_tab(all_results):
             )
             fig_workload.update_traces(textposition='inside', textinfo='percent+label')
             fig_workload.update_layout(height=350)
-            st.plotly_chart(fig_workload, use_container_width=True)
+            st.plotly_chart(fig_workload, use_container_width=True, config={'responsive': True}) # Added config
     
     with ai_cols[1]:
         if complexity_levels:
@@ -2621,7 +2621,7 @@ def render_bulk_cost_tab(all_results):
             showlegend=False,
             title_font_size=16
         )
-        st.plotly_chart(fig1, use_container_width=True)
+        st.plotly_chart(fig1, use_container_width=True, config={'responsive': True}) # Added config
     
     with viz_cols[1]:
         # Cost by engine type
@@ -2641,7 +2641,7 @@ def render_bulk_cost_tab(all_results):
         )
         fig2.update_traces(textposition='inside', textinfo='percent+label')
         fig2.update_layout(height=400, title_font_size=16)
-        st.plotly_chart(fig2, use_container_width=True)
+        st.plotly_chart(fig2, use_container_width=True, config={'responsive': True}) # Added config
     
     # Cost summary metrics
     st.markdown("##### 📊 Financial Summary")
