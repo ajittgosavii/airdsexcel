@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 import anthropic
 import json
 import time
@@ -17,62 +18,302 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for modern styling
+# Enhanced CSS for modern, professional styling
 st.markdown("""
 <style>
+    /* Hide Streamlit default elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Main container styling */
+    .main {
+        padding-top: 2rem;
+    }
+    
+    /* Header styling */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 10px;
+        padding: 3rem 2rem;
+        border-radius: 15px;
         text-align: center;
         color: white;
         margin-bottom: 2rem;
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
     }
+    
     .ai-badge {
-        background: rgba(255,255,255,0.2);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
+        background: rgba(255,255,255,0.25);
+        padding: 0.75rem 1.5rem;
+        border-radius: 25px;
         display: inline-block;
         margin-bottom: 1rem;
-        font-size: 0.9rem;
+        font-size: 0.95rem;
+        font-weight: 600;
+        backdrop-filter: blur(10px);
     }
+    
+    .main-header h1 {
+        font-size: 3rem;
+        font-weight: 700;
+        margin: 1rem 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .main-header p {
+        font-size: 1.2rem;
+        opacity: 0.9;
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.6;
+    }
+    
+    /* Metric cards */
     .metric-card {
         background: white;
-        padding: 1.5rem;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        border-left: 4px solid #667eea;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid #e2e8f0;
         margin-bottom: 1rem;
+        text-align: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
+    
+    .metric-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1a202c;
+        margin: 0.5rem 0;
+    }
+    
+    .metric-label {
+        font-size: 1rem;
+        color: #718096;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .metric-subtitle {
+        font-size: 0.9rem;
+        color: #a0aec0;
+        margin-top: 0.5rem;
+    }
+    
+    /* AI insight cards */
     .ai-insight {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-        border: 1px solid #0ea5e9;
-        border-radius: 12px;
+        border: 2px solid #0ea5e9;
+        border-radius: 15px;
+        padding: 2rem;
+        margin: 1.5rem 0;
+        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.1);
+    }
+    
+    .ai-insight h4 {
+        color: #0c4a6e;
+        margin-bottom: 1rem;
+        font-size: 1.3rem;
+        font-weight: 600;
+    }
+    
+    .ai-insight h5 {
+        color: #0369a1;
+        margin: 1rem 0 0.5rem 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+    
+    /* Status cards */
+    .status-card {
         padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        border-left: 5px solid;
+    }
+    
+    .status-success {
+        background: #f0fff4;
+        border-color: #38a169;
+        color: #22543d;
+    }
+    
+    .status-warning {
+        background: #fffaf0;
+        border-color: #ed8936;
+        color: #744210;
+    }
+    
+    .status-error {
+        background: #fff5f5;
+        border-color: #e53e3e;
+        color: #742a2a;
+    }
+    
+    .status-info {
+        background: #ebf8ff;
+        border-color: #3182ce;
+        color: #2a4365;
+    }
+    
+    /* Configuration section */
+    .config-section {
+        background: #f8fafc;
+        padding: 2rem;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
         margin: 1rem 0;
     }
-    .recommendation-card {
+    
+    .config-header {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    /* Tab styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.5rem;
         background: #f8fafc;
+        padding: 0.5rem;
+        border-radius: 10px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        background: white;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
         border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1rem;
-        margin: 0.5rem 0;
+        font-weight: 500;
     }
-    .risk-card {
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
     }
-    .medium-risk {
-        background: #fef3c7;
-        border: 1px solid #f59e0b;
-    }
+    
+    /* Footer styling */
     .footer-content {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        padding: 3rem 2rem;
+        border-radius: 15px;
         text-align: center;
-        padding: 2rem;
-        background: #f8fafc;
+        margin-top: 3rem;
+        border: 1px solid #e2e8f0;
+    }
+    
+    .footer-content h3 {
+        color: #2d3748;
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+        font-weight: 700;
+    }
+    
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin: 2rem 0;
+        text-align: center;
+    }
+    
+    .feature-item {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        font-weight: 500;
+        color: #4a5568;
+    }
+    
+    /* Button styling */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
         border-radius: 8px;
-        margin-top: 2rem;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        background: #f8fafc;
+    }
+    
+    /* Progress bar styling */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* DataFrame styling */
+    .dataframe {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+    
+    /* Analysis grid */
+    .analysis-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    
+    .analysis-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .analysis-card h6 {
+        color: #2d3748;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+    }
+    
+    /* Responsive design */
+    @media (max-width: 768px) {
+        .main-header {
+            padding: 2rem 1rem;
+        }
+        
+        .main-header h1 {
+            font-size: 2rem;
+        }
+        
+        .main-header p {
+            font-size: 1rem;
+        }
+        
+        .metric-card {
+            padding: 1.5rem;
+        }
+        
+        .ai-insight {
+            padding: 1.5rem;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -733,19 +974,20 @@ def main():
     # Header
     st.markdown("""
     <div class="main-header">
-        <div class="ai-badge">🤖 Powered by AI</div>
+        <div class="ai-badge">🤖 Powered by Claude AI</div>
         <h1>AI Database Migration Studio</h1>
-        <p>Enterprise database migration planning with intelligent recommendations, cost optimization, and risk assessment</p>
+        <p>Enterprise database migration planning with intelligent recommendations, cost optimization, and risk assessment powered by advanced AI analytics</p>
     </div>
     """, unsafe_allow_html=True)
     
-    # Sidebar
+    # Sidebar Configuration
     with st.sidebar:
-        st.header("🔑 API Configuration")
+        st.markdown("### 🔑 API Configuration")
         api_key = st.text_input(
             "Claude API Key", 
             type="password",
-            help="Enter your Anthropic Claude API key to enable AI features"
+            help="Enter your Anthropic Claude API key to enable AI features",
+            placeholder="sk-ant-..."
         )
         
         if api_key:
@@ -755,35 +997,39 @@ def main():
             except Exception as e:
                 st.error(f"❌ API Key Error: {str(e)}")
         else:
-            st.warning("⚠️ Enter API key to unlock AI features")
+            st.info("⚠️ Enter API key to unlock AI features")
         
         st.markdown("---")
         
-        # Configuration inputs
-        st.header("🎯 Migration Configuration")
+        # Configuration inputs with better organization
+        st.markdown("### 🎯 Migration Configuration")
         
-        st.subheader("Database Settings")
-        engine = st.selectbox("Database Engine", st.session_state.calculator.engines, index=0)
-        region = st.selectbox("AWS Region", st.session_state.calculator.regions, index=0)
+        with st.expander("📊 Database Settings", expanded=True):
+            engine = st.selectbox("Database Engine", st.session_state.calculator.engines, index=0)
+            region = st.selectbox("AWS Region", st.session_state.calculator.regions, index=0)
         
-        st.subheader("Current Infrastructure")
-        cores = st.number_input("CPU Cores", min_value=1, value=16, step=1)
-        cpu_util = st.slider("Peak CPU Utilization (%)", 1, 100, 65)
-        ram = st.number_input("RAM (GB)", min_value=1, value=64, step=1)
-        ram_util = st.slider("Peak RAM Utilization (%)", 1, 100, 75)
-        storage = st.number_input("Storage (GB)", min_value=1, value=1000, step=100)
-        iops = st.number_input("Peak IOPS", min_value=100, value=8000, step=1000)
+        with st.expander("🖥️ Current Infrastructure", expanded=True):
+            col1, col2 = st.columns(2)
+            with col1:
+                cores = st.number_input("CPU Cores", min_value=1, value=16, step=1)
+                cpu_util = st.slider("Peak CPU %", 1, 100, 65)
+            with col2:
+                ram = st.number_input("RAM (GB)", min_value=1, value=64, step=1)
+                ram_util = st.slider("Peak RAM %", 1, 100, 75)
+            
+            storage = st.number_input("Storage (GB)", min_value=1, value=1000, step=100)
+            iops = st.number_input("Peak IOPS", min_value=100, value=8000, step=1000)
         
-        st.subheader("Migration Settings")
-        growth_rate = st.number_input("Annual Growth Rate (%)", min_value=0, max_value=100, value=15)
-        backup_days = st.slider("Backup Retention (Days)", 1, 35, 7)
-        years_projection = st.slider("Projection Years", 1, 5, 3)
-        data_transfer_gb = st.number_input("Monthly Data Transfer (GB)", min_value=0, value=100)
+        with st.expander("⚙️ Migration Settings", expanded=True):
+            growth_rate = st.number_input("Annual Growth Rate (%)", min_value=0, max_value=100, value=15)
+            backup_days = st.slider("Backup Retention (Days)", 1, 35, 7)
+            years_projection = st.slider("Projection Years", 1, 5, 3)
+            data_transfer_gb = st.number_input("Monthly Data Transfer (GB)", min_value=0, value=100)
         
-        st.subheader("🤖 AI Features")
-        enable_ai_analysis = st.checkbox("Enable AI Workload Analysis", value=True)
-        enable_predictions = st.checkbox("Enable Future Predictions", value=True)
-        enable_migration_strategy = st.checkbox("Generate Migration Strategy", value=True)
+        with st.expander("🤖 AI Features", expanded=True):
+            enable_ai_analysis = st.checkbox("Enable AI Workload Analysis", value=True)
+            enable_predictions = st.checkbox("Enable Future Predictions", value=True)
+            enable_migration_strategy = st.checkbox("Generate Migration Strategy", value=True)
     
     # Collect inputs
     inputs = {
@@ -801,181 +1047,462 @@ def main():
         'data_transfer_gb': data_transfer_gb
     }
     
-    # Create tabs for different input methods
-    tab1, tab2 = st.tabs(["📁 File Upload", "🧪 Manual Input"])
+    # Create main tabs with improved styling
+    main_tabs = st.tabs(["🔍 AI Analysis", "📁 Bulk Upload", "📊 Manual Configuration", "📋 Reports & Export"])
     
-    with tab1:
-        st.markdown("### Upload Multiple Database Configurations")
+    # Tab 1: AI Analysis
+    with main_tabs[0]:
+        render_ai_analysis_tab(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key)
+    
+    # Tab 2: Bulk Upload  
+    with main_tabs[1]:
+        render_bulk_upload_tab(enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key)
+    
+    # Tab 3: Manual Configuration
+    with main_tabs[2]:
+        render_manual_config_tab(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key)
+    
+    # Tab 4: Reports & Export
+    with main_tabs[3]:
+        render_reports_tab()
+
+def render_ai_analysis_tab(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key):
+    """Render the AI Analysis tab"""
+    st.markdown("### 🤖 AI-Powered Database Migration Analysis")
+    
+    # Current configuration display
+    st.markdown("#### 📊 Current Configuration Overview")
+    
+    config_cols = st.columns(4)
+    with config_cols[0]:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Database Engine</div>
+            <div class="metric-value" style="font-size: 1.5rem;">{inputs['engine'].upper()}</div>
+            <div class="metric-subtitle">{inputs['region']}</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with config_cols[1]:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Compute Resources</div>
+            <div class="metric-value">{inputs['cores']}</div>
+            <div class="metric-subtitle">CPU Cores ({inputs['cpu_util']}% peak)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with config_cols[2]:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Memory</div>
+            <div class="metric-value">{inputs['ram']}</div>
+            <div class="metric-subtitle">GB RAM ({inputs['ram_util']}% peak)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with config_cols[3]:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Storage & Performance</div>
+            <div class="metric-value">{inputs['storage']:,}</div>
+            <div class="metric-subtitle">GB Storage ({inputs['iops']:,} IOPS)</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # AI Analysis Controls
+    st.markdown("#### 🎯 AI Analysis Configuration")
+    
+    analysis_cols = st.columns([2, 1])
+    with analysis_cols[0]:
+        st.markdown("**Selected AI Features:**")
+        feature_status = []
+        if enable_ai_analysis:
+            feature_status.append("✅ **Workload Pattern Analysis** - Deep dive into database usage patterns")
+        else:
+            feature_status.append("❌ Workload Pattern Analysis")
+            
+        if enable_predictions:
+            feature_status.append("✅ **Future Capacity Planning** - AI-powered growth predictions")
+        else:
+            feature_status.append("❌ Future Capacity Planning")
+            
+        if enable_migration_strategy:
+            feature_status.append("✅ **Migration Strategy Generation** - Step-by-step migration roadmap")
+        else:
+            feature_status.append("❌ Migration Strategy Generation")
+        
+        for status in feature_status:
+            st.markdown(status)
+    
+    with analysis_cols[1]:
+        if not api_key:
+            st.markdown("""
+            <div class="status-card status-warning">
+                <strong>⚠️ API Key Required</strong><br>
+                Enter your Claude API key in the sidebar to enable AI analysis
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div class="status-card status-success">
+                <strong>✅ AI Ready</strong><br>
+                All AI features are available
+            </div>
+            """, unsafe_allow_html=True)
+    
+    # Analysis Button
+    st.markdown("---")
+    
+    button_cols = st.columns([1, 2, 1])
+    with button_cols[1]:
+        if st.button("🚀 Start AI Analysis", type="primary", use_container_width=True):
+            if not api_key:
+                st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
+            else:
+                analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+
+def render_bulk_upload_tab(enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key):
+    """Render the bulk upload tab"""
+    st.markdown("### 📁 Bulk Database Configuration Upload")
+    
+    # Upload section
+    st.markdown("#### 📤 Upload Database Configurations")
+    
+    upload_cols = st.columns([2, 1])
+    with upload_cols[0]:
         uploaded_file = st.file_uploader(
             "Upload CSV/Excel file with database configurations", 
             type=["csv", "xlsx"],
-            help="Upload a file containing multiple database configurations"
+            help="Upload a file containing multiple database configurations for batch analysis"
         )
-        
-        if uploaded_file:
-            try:
-                st.info(f"📄 Processing file: {uploaded_file.name} ({uploaded_file.size} bytes)")
-                
-                valid_inputs, errors = parse_uploaded_file(uploaded_file)
-                
-                if errors:
-                    st.error(f"❌ **Found {len(errors)} validation errors:**")
-                    with st.expander("View Error Details", expanded=False):
-                        for i, error in enumerate(errors, 1):
-                            st.error(f"{i}. {error}")
-                
-                if valid_inputs:
-                    st.success(f"✅ Successfully parsed **{len(valid_inputs)}** valid database configurations")
-                    st.session_state.file_inputs = valid_inputs
-                    
-                    # Show detailed summary
-                    st.markdown("#### 📋 Parsed Database Summary")
-                    summary_data = []
-                    for i, db in enumerate(valid_inputs, 1):
-                        summary_data.append({
-                            "#": i,
-                            "Database Name": db.get('db_name', f'Database {i}'),
-                            "Engine": db.get('engine', 'Unknown'),
-                            "Region": db.get('region', 'Unknown'),
-                            "CPU Cores": db.get('cores', 'N/A'),
-                            "RAM (GB)": db.get('ram', 'N/A'),
-                            "Storage (GB)": db.get('storage', 'N/A')
-                        })
-                    
-                    summary_df = pd.DataFrame(summary_data)
-                    st.dataframe(summary_df, use_container_width=True, hide_index=True)
-                    
-                    # Analysis options
-                    st.markdown("#### 🎯 Analysis Configuration")
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        st.markdown("**Selected AI Features:**")
-                        st.write(f"• AI Workload Analysis: {'✅ Enabled' if enable_ai_analysis else '❌ Disabled'}")
-                        st.write(f"• Future Predictions: {'✅ Enabled' if enable_predictions else '❌ Disabled'}")
-                        st.write(f"• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}")
-                    
-                    with col2:
-                        st.markdown("**Ready to Analyze:**")
-                        if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
-                            if not api_key:
-                                st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
-                            else:
-                                analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
-                else:
-                    st.error("❌ No valid database configurations found. Please check your file format and data.")
-                    
-            except Exception as e:
-                st.error(f"❌ **Error processing file:** {str(e)}")
-                st.info("💡 Make sure your CSV file has all required columns and proper formatting.")
     
-    with tab2:
-        st.markdown("### Single Database Analysis")
-        
-        # Show current configuration summary
-        st.markdown("#### 📊 Current Configuration")
-        config_col1, config_col2, config_col3 = st.columns(3)
-        
-        with config_col1:
-            st.metric("Database Engine", engine)
-            st.metric("CPU Cores", cores)
-            st.metric("RAM (GB)", ram)
-        
-        with config_col2:
-            st.metric("AWS Region", region)
-            st.metric("CPU Utilization", f"{cpu_util}%")
-            st.metric("RAM Utilization", f"{ram_util}%")
-        
-        with config_col3:
-            st.metric("Storage (GB)", f"{storage:,}")
-            st.metric("IOPS", f"{iops:,}")
-            st.metric("Growth Rate", f"{growth_rate}%")
-        
-        # Analysis options
-        st.markdown("#### 🎯 Analysis Options")
-        analysis_col1, analysis_col2 = st.columns(2)
-        
-        with analysis_col1:
-            st.markdown("**Selected AI Features:**")
-            st.write(f"• AI Workload Analysis: {'✅ Enabled' if enable_ai_analysis else '❌ Disabled'}")
-            st.write(f"• Future Predictions: {'✅ Enabled' if enable_predictions else '❌ Disabled'}")
-            st.write(f"• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}")
-        
-        with analysis_col2:
-            st.markdown("**Actions:**")
-            if st.button("🚀 Generate AI-Powered Analysis", type="primary", use_container_width=True):
-                if not api_key:
-                    st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
-                else:
-                    analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+    with upload_cols[1]:
+        if st.button("📋 Download Template", use_container_width=True):
+            # Create sample template
+            template_data = {
+                'db_name': ['ProductionDB', 'StagingDB', 'AnalyticsDB'],
+                'engine': ['postgres', 'postgres', 'oracle-ee'],
+                'region': ['us-east-1', 'us-east-1', 'us-west-2'],
+                'cores': [16, 8, 32],
+                'cpu_util': [75, 60, 80],
+                'ram': [64, 32, 128],
+                'ram_util': [70, 65, 75],
+                'storage': [2000, 500, 5000],
+                'iops': [10000, 5000, 15000],
+                'growth': [15, 10, 20],
+                'backup_days': [7, 7, 14],
+                'years': [3, 3, 3],
+                'data_transfer_gb': [200, 50, 500]
+            }
+            template_df = pd.DataFrame(template_data)
+            csv_buffer = io.StringIO()
+            template_df.to_csv(csv_buffer, index=False)
             
-            if st.button("📊 Export Sample Report", use_container_width=True):
-                generate_sample_report()
+            st.download_button(
+                label="📄 Download CSV Template",
+                data=csv_buffer.getvalue(),
+                file_name=f"database_migration_template_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+    
+    if uploaded_file:
+        process_bulk_upload(uploaded_file, enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key)
 
-def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy):
-    """Analyze multiple databases from uploaded file"""
-    progress_bar = st.progress(0)
-    status_text = st.empty()
-    
-    all_results = []
-    
+def process_bulk_upload(uploaded_file, enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key):
+    """Process the bulk upload file"""
     try:
-        for i, inputs in enumerate(valid_inputs):
-            status_text.text(f"🔄 Analyzing database {i+1} of {len(valid_inputs)}...")
-            progress = (i + 1) / len(valid_inputs)
-            progress_bar.progress(progress)
-            
-            calculator = st.session_state.calculator
-            recommendations = {}
-            for env in calculator.env_profiles:
-                recommendations[env] = calculator.calculate_requirements(inputs, env)
-            
-            ai_insights = {}
-            if st.session_state.ai_analytics and enable_ai_analysis:
-                try:
-                    workload_analysis = st.session_state.ai_analytics.analyze_workload_patterns(inputs)
-                    ai_insights['workload'] = workload_analysis
-                except Exception as e:
-                    ai_insights['workload'] = {"error": str(e)}
-            
-            if st.session_state.ai_analytics and enable_predictions:
-                try:
-                    predictions = st.session_state.ai_analytics.predict_future_requirements(inputs, inputs.get('years', 3))
-                    ai_insights['predictions'] = predictions
-                except Exception as e:
-                    ai_insights['predictions'] = {"error": str(e)}
-            
-            if st.session_state.ai_analytics and enable_migration_strategy:
-                try:
-                    migration_strategy = st.session_state.ai_analytics.generate_migration_strategy(recommendations['PROD'])
-                    ai_insights['migration'] = migration_strategy
-                except Exception as e:
-                    ai_insights['migration'] = {"error": str(e)}
-            
-            all_results.append({
-                'inputs': inputs,
-                'recommendations': recommendations,
-                'ai_insights': ai_insights
-            })
+        st.markdown("#### 📋 File Processing Results")
         
-        progress_bar.progress(1.0)
-        status_text.text("✅ Analysis complete for all databases!")
+        with st.spinner("🔄 Processing uploaded file..."):
+            valid_inputs, errors = parse_uploaded_file(uploaded_file)
         
-        display_file_results(all_results)
+        # Results summary
+        result_cols = st.columns(3)
+        with result_cols[0]:
+            st.metric("Total Rows", len(valid_inputs) + len(errors))
+        with result_cols[1]:
+            st.metric("Valid Configurations", len(valid_inputs))
+        with result_cols[2]:
+            st.metric("Errors", len(errors))
         
+        # Show errors if any
+        if errors:
+            with st.expander(f"⚠️ View {len(errors)} Validation Errors", expanded=False):
+                for i, error in enumerate(errors, 1):
+                    st.error(f"{i}. {error}")
+        
+        # Show valid configurations
+        if valid_inputs:
+            st.success(f"✅ Successfully parsed **{len(valid_inputs)}** valid database configurations")
+            st.session_state.file_inputs = valid_inputs
+            
+            # Display preview
+            st.markdown("#### 📊 Configuration Preview")
+            preview_data = []
+            for i, db in enumerate(valid_inputs[:5], 1):  # Show first 5
+                preview_data.append({
+                    "#": i,
+                    "Database": db.get('db_name', f'Database {i}'),
+                    "Engine": db.get('engine', 'Unknown'),
+                    "Region": db.get('region', 'Unknown'),
+                    "CPU": f"{db.get('cores', 'N/A')} cores",
+                    "RAM": f"{db.get('ram', 'N/A')} GB",
+                    "Storage": f"{db.get('storage', 'N/A')} GB"
+                })
+            
+            preview_df = pd.DataFrame(preview_data)
+            st.dataframe(preview_df, use_container_width=True, hide_index=True)
+            
+            if len(valid_inputs) > 5:
+                st.info(f"Showing first 5 configurations. Total: {len(valid_inputs)} databases")
+            
+            # Analysis controls
+            st.markdown("#### 🚀 Bulk Analysis")
+            
+            analysis_control_cols = st.columns([2, 1])
+            with analysis_control_cols[0]:
+                st.markdown("**Analysis Settings:**")
+                st.write(f"• AI Workload Analysis: {'✅ Enabled' if enable_ai_analysis else '❌ Disabled'}")
+                st.write(f"• Future Predictions: {'✅ Enabled' if enable_predictions else '❌ Disabled'}")
+                st.write(f"• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}")
+            
+            with analysis_control_cols[1]:
+                if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
+                    if not api_key and (enable_ai_analysis or enable_predictions or enable_migration_strategy):
+                        st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
+                    else:
+                        analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+        else:
+            st.error("❌ No valid database configurations found. Please check your file format and data.")
+            
     except Exception as e:
-        progress_bar.empty()
-        status_text.empty()
-        st.error(f"Analysis failed: {str(e)}")
+        st.error(f"❌ **Error processing file:** {str(e)}")
+        st.info("💡 Make sure your file has all required columns and proper formatting.")
+
+def render_manual_config_tab(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key):
+    """Render the manual configuration tab"""
+    st.markdown("### 📊 Manual Database Configuration")
+    
+    # Configuration summary
+    st.markdown("#### 🎯 Current Configuration Summary")
+    
+    summary_cols = st.columns(2)
+    with summary_cols[0]:
+        st.markdown("""
+        <div class="config-section">
+            <div class="config-header">🖥️ Infrastructure Details</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div><strong>Database Engine:</strong> {}</div>
+                <div><strong>AWS Region:</strong> {}</div>
+                <div><strong>CPU Cores:</strong> {}</div>
+                <div><strong>RAM:</strong> {} GB</div>
+                <div><strong>Storage:</strong> {:,} GB</div>
+                <div><strong>IOPS:</strong> {:,}</div>
+            </div>
+        </div>
+        """.format(
+            inputs['engine'].upper(),
+            inputs['region'],
+            inputs['cores'],
+            inputs['ram'],
+            inputs['storage'],
+            inputs['iops']
+        ), unsafe_allow_html=True)
+    
+    with summary_cols[1]:
+        st.markdown("""
+        <div class="config-section">
+            <div class="config-header">📈 Performance & Growth</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                <div><strong>CPU Utilization:</strong> {}%</div>
+                <div><strong>RAM Utilization:</strong> {}%</div>
+                <div><strong>Growth Rate:</strong> {}% annually</div>
+                <div><strong>Backup Retention:</strong> {} days</div>
+                <div><strong>Data Transfer:</strong> {} GB/month</div>
+                <div><strong>Projection Period:</strong> {} years</div>
+            </div>
+        </div>
+        """.format(
+            inputs['cpu_util'],
+            inputs['ram_util'],
+            inputs['growth'],
+            inputs['backup_days'],
+            inputs['data_transfer_gb'],
+            inputs['years']
+        ), unsafe_allow_html=True)
+    
+    # Quick analysis buttons
+    st.markdown("#### ⚡ Quick Actions")
+    
+    action_cols = st.columns(3)
+    with action_cols[0]:
+        if st.button("🧮 Basic Cost Calculation", use_container_width=True):
+            perform_basic_calculation(inputs)
+    
+    with action_cols[1]:
+        if st.button("🚀 Full AI Analysis", type="primary", use_container_width=True):
+            if not api_key:
+                st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
+            else:
+                analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+    
+    with action_cols[2]:
+        if st.button("📊 Generate Sample Report", use_container_width=True):
+            generate_sample_report()
+
+def render_reports_tab():
+    """Render the reports and export tab"""
+    st.markdown("### 📋 Reports & Export Center")
+    
+    st.markdown("#### 📊 Available Reports")
+    
+    report_cols = st.columns(2)
+    
+    with report_cols[0]:
+        st.markdown("""
+        <div class="config-section">
+            <div class="config-header">📈 Executive Reports</div>
+            <p>Comprehensive analysis reports for stakeholders and decision makers.</p>
+            <ul>
+                <li>Cost-benefit analysis</li>
+                <li>ROI calculations</li>
+                <li>Risk assessments</li>
+                <li>Timeline projections</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("📊 Generate Executive Summary", use_container_width=True):
+            st.info("Run an analysis first to generate executive reports")
+    
+    with report_cols[1]:
+        st.markdown("""
+        <div class="config-section">
+            <div class="config-header">🔧 Technical Reports</div>
+            <p>Detailed technical documentation for implementation teams.</p>
+            <ul>
+                <li>Instance specifications</li>
+                <li>Configuration details</li>
+                <li>Migration procedures</li>
+                <li>Performance metrics</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("🔧 Generate Technical Report", use_container_width=True):
+            st.info("Run an analysis first to generate technical reports")
+    
+    # Sample downloads
+    st.markdown("#### 📄 Sample Templates & Documentation")
+    
+    template_cols = st.columns(3)
+    
+    with template_cols[0]:
+        if st.button("📋 Download Input Template", use_container_width=True):
+            # Create sample template
+            template_data = {
+                'db_name': ['ProductionDB', 'StagingDB'],
+                'engine': ['postgres', 'oracle-ee'],
+                'region': ['us-east-1', 'us-west-2'],
+                'cores': [16, 32],
+                'cpu_util': [75, 80],
+                'ram': [64, 128],
+                'ram_util': [70, 75],
+                'storage': [2000, 5000],
+                'iops': [10000, 15000],
+                'growth': [15, 20],
+                'backup_days': [7, 14],
+                'years': [3, 3],
+                'data_transfer_gb': [200, 500]
+            }
+            template_df = pd.DataFrame(template_data)
+            csv_buffer = io.StringIO()
+            template_df.to_csv(csv_buffer, index=False)
+            
+            st.download_button(
+                label="📄 Download CSV Template",
+                data=csv_buffer.getvalue(),
+                file_name=f"migration_template_{datetime.now().strftime('%Y%m%d')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+    
+    with template_cols[1]:
+        if st.button("📊 Sample Analysis Report", use_container_width=True):
+            generate_sample_report()
+    
+    with template_cols[2]:
+        if st.button("📖 Migration Guide", use_container_width=True):
+            st.info("Migration guide will be available after running analysis")
+
+def perform_basic_calculation(inputs):
+    """Perform basic cost calculation without AI"""
+    st.markdown("#### 🧮 Basic Cost Calculation Results")
+    
+    with st.spinner("🔄 Calculating recommendations..."):
+        calculator = st.session_state.calculator
+        recommendations = {}
+        for env in calculator.env_profiles:
+            recommendations[env] = calculator.calculate_requirements(inputs, env)
+    
+    # Display basic results
+    st.markdown("##### 💰 Cost Summary by Environment")
+    
+    env_data = []
+    for env, rec in recommendations.items():
+        env_data.append({
+            'Environment': env,
+            'Instance Type': rec['instance_type'],
+            'vCPUs': rec['vcpus'],
+            'RAM (GB)': rec['ram_gb'],
+            'Storage (GB)': rec['storage_gb'],
+            'Monthly Cost': rec['monthly_cost'],
+            'Annual Cost': rec['annual_cost']
+        })
+    
+    env_df = pd.DataFrame(env_data)
+    st.dataframe(
+        env_df,
+        column_config={
+            "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f"),
+            "Annual Cost": st.column_config.NumberColumn("Annual Cost", format="$%.0f")
+        },
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    # Key metrics
+    prod_rec = recommendations['PROD']
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.metric("Recommended Instance", prod_rec['instance_type'])
+    with col2:
+        st.metric("Monthly Cost (PROD)", f"${prod_rec['monthly_cost']:,.0f}")
+    with col3:
+        st.metric("Annual Cost (PROD)", f"${prod_rec['annual_cost']:,.0f}")
+    
+    st.info("💡 For detailed AI insights, migration strategies, and risk assessments, enable AI features and run full analysis.")
 
 def analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy):
-    """Main analysis function with AI integration"""
+    """Main analysis function with AI integration and enhanced UI"""
     
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    # Create progress tracking
+    progress_container = st.container()
+    with progress_container:
+        st.markdown("#### 🔄 Analysis in Progress")
+        progress_bar = st.progress(0)
+        status_text = st.empty()
+        stage_info = st.empty()
     
     try:
+        # Stage 1: Basic calculations
         status_text.text("🔄 Calculating resource requirements...")
+        stage_info.info("Analyzing current workload and determining optimal AWS configurations")
         progress_bar.progress(20)
+        time.sleep(1)
         
         calculator = st.session_state.calculator
         recommendations = {}
@@ -984,186 +1511,365 @@ def analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migr
         
         progress_bar.progress(40)
         
+        # Stage 2: AI Analysis
         ai_insights = {}
         if st.session_state.ai_analytics and enable_ai_analysis:
             status_text.text("🤖 Running AI workload analysis...")
+            stage_info.info("AI is analyzing workload patterns and generating intelligent recommendations")
             progress_bar.progress(60)
             
             try:
                 workload_analysis = st.session_state.ai_analytics.analyze_workload_patterns(inputs)
                 ai_insights['workload'] = workload_analysis
+                time.sleep(2)
             except Exception as e:
                 st.error(f"AI Analysis Error: {str(e)}")
                 ai_insights['workload'] = {"error": str(e)}
         
+        # Stage 3: Predictions
         if st.session_state.ai_analytics and enable_predictions:
             status_text.text("🔮 Generating future predictions...")
+            stage_info.info("AI is forecasting future capacity requirements and cost projections")
             progress_bar.progress(75)
             
             try:
                 predictions = st.session_state.ai_analytics.predict_future_requirements(inputs, inputs['years'])
                 ai_insights['predictions'] = predictions
+                time.sleep(2)
             except Exception as e:
                 st.error(f"Prediction Error: {str(e)}")
                 ai_insights['predictions'] = {"error": str(e)}
         
+        # Stage 4: Migration Strategy
         if st.session_state.ai_analytics and enable_migration_strategy:
             status_text.text("📋 Creating migration strategy...")
+            stage_info.info("AI is developing a comprehensive migration roadmap and risk assessment")
             progress_bar.progress(90)
             
             try:
                 migration_strategy = st.session_state.ai_analytics.generate_migration_strategy(recommendations['PROD'])
                 ai_insights['migration'] = migration_strategy
+                time.sleep(2)
             except Exception as e:
                 st.error(f"Migration Strategy Error: {str(e)}")
                 ai_insights['migration'] = {"error": str(e)}
         
+        # Complete
         progress_bar.progress(100)
         status_text.text("✅ Analysis complete!")
+        stage_info.success("All analysis stages completed successfully")
         time.sleep(1)
-        progress_bar.empty()
-        status_text.empty()
         
-        display_results(recommendations, ai_insights, inputs)
+        # Clear progress indicators
+        progress_container.empty()
+        
+        # Display comprehensive results
+        display_enhanced_results(recommendations, ai_insights, inputs)
         
     except Exception as e:
-        progress_bar.empty()
-        status_text.empty()
+        progress_container.empty()
         st.error(f"Analysis failed: {str(e)}")
 
-def display_results(recommendations, ai_insights, inputs):
-    """Display comprehensive results with AI insights"""
+def display_enhanced_results(recommendations, ai_insights, inputs):
+    """Display comprehensive results with enhanced AI insights"""
     
-    # Key Metrics Dashboard
-    st.subheader("📊 Migration Dashboard")
+    st.markdown("### 🎯 Migration Analysis Results")
     
+    # Executive Summary Header
     prod_rec = recommendations['PROD']
-    col1, col2, col3, col4 = st.columns(4)
     
-    with col1:
+    summary_cols = st.columns(4)
+    with summary_cols[0]:
         st.markdown(f"""
         <div class="metric-card">
-            <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Recommended Instance</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">{prod_rec['instance_type']}</div>
-            <div style="font-size: 0.8rem; color: #888;">{prod_rec['vcpus']} vCPUs, {prod_rec['ram_gb']} GB RAM</div>
+            <div class="metric-label">Recommended Instance</div>
+            <div class="metric-value" style="color: #667eea;">{prod_rec['instance_type']}</div>
+            <div class="metric-subtitle">{prod_rec['vcpus']} vCPUs • {prod_rec['ram_gb']} GB RAM</div>
         </div>
         """, unsafe_allow_html=True)
     
-    with col2:
+    with summary_cols[1]:
         st.markdown(f"""
         <div class="metric-card">
-            <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Monthly Cost</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${prod_rec['monthly_cost']:,.0f}</div>
-            <div style="font-size: 0.8rem; color: #888;">Production Environment</div>
+            <div class="metric-label">Monthly Cost</div>
+            <div class="metric-value" style="color: #10b981;">${prod_rec['monthly_cost']:,.0f}</div>
+            <div class="metric-subtitle">Production Environment</div>
         </div>
         """, unsafe_allow_html=True)
     
-    with col3:
+    with summary_cols[2]:
         onprem_monthly = inputs['cores'] * 200
         monthly_savings = onprem_monthly - prod_rec['monthly_cost']
+        savings_percentage = (monthly_savings / onprem_monthly) * 100 if onprem_monthly > 0 else 0
         st.markdown(f"""
         <div class="metric-card">
-            <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Monthly Savings</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${monthly_savings:,.0f}</div>
-            <div style="font-size: 0.8rem; color: #888;">vs On-Premise</div>
+            <div class="metric-label">Monthly Savings</div>
+            <div class="metric-value" style="color: #10b981;">${monthly_savings:,.0f}</div>
+            <div class="metric-subtitle">{savings_percentage:.0f}% vs On-Premise</div>
         </div>
         """, unsafe_allow_html=True)
     
-    with col4:
+    with summary_cols[3]:
         optimization_score = prod_rec.get('optimization_score', 85)
+        score_color = "#10b981" if optimization_score >= 80 else "#f59e0b" if optimization_score >= 60 else "#ef4444"
         st.markdown(f"""
         <div class="metric-card">
-            <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Optimization Score</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">{optimization_score}%</div>
-            <div style="font-size: 0.8rem; color: #888;">Resource Efficiency</div>
+            <div class="metric-label">Optimization Score</div>
+            <div class="metric-value" style="color: {score_color};">{optimization_score}%</div>
+            <div class="metric-subtitle">Resource Efficiency</div>
         </div>
         """, unsafe_allow_html=True)
     
-    # AI Insights Section
-    if ai_insights and st.session_state.ai_analytics:
-        st.subheader("🤖 AI-Powered Insights")
+    # Results tabs
+    result_tabs = st.tabs([
+        "🤖 AI Insights", 
+        "🏗️ Recommendations", 
+        "💰 Cost Analysis", 
+        "📈 Future Planning",
+        "🚀 Migration Strategy"
+    ])
+    
+    with result_tabs[0]:  # AI Insights
+        render_ai_insights_tab(ai_insights, inputs)
+    
+    with result_tabs[1]:  # Recommendations
+        render_recommendations_tab(recommendations, inputs)
+    
+    with result_tabs[2]:  # Cost Analysis
+        render_cost_analysis_tab(recommendations, inputs)
+    
+    with result_tabs[3]:  # Future Planning
+        render_future_planning_tab(ai_insights, recommendations, inputs)
+    
+    with result_tabs[4]:  # Migration Strategy
+        render_migration_strategy_tab(ai_insights, recommendations)
+
+def render_ai_insights_tab(ai_insights, inputs):
+    """Render AI insights with professional layout"""
+    st.markdown("#### 🤖 AI-Powered Intelligence")
+    
+    if not ai_insights:
+        st.markdown("""
+        <div class="status-card status-info">
+            <strong>🔑 AI Features Not Enabled</strong><br>
+            Configure your Claude API key in the sidebar and enable AI features to see intelligent insights.
+        </div>
+        """, unsafe_allow_html=True)
+        return
+    
+    # Workload Analysis
+    if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
+        workload = ai_insights['workload']
         
-        if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
-            workload = ai_insights['workload']
+        st.markdown("""
+        <div class="ai-insight">
+            <h4>🔍 Intelligent Workload Analysis</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Workload classification
+        insight_cols = st.columns(3)
+        with insight_cols[0]:
             st.markdown(f"""
-            <div class="ai-insight">
-                <h4>🔍 Workload Analysis</h4>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0;">
-                    <div><strong>Classification:</strong> {workload.get('workload_type', 'Mixed')}</div>
-                    <div><strong>Complexity:</strong> {workload.get('complexity', 'Medium')}</div>
-                    <div><strong>Timeline:</strong> {workload.get('timeline', '12-16 weeks')}</div>
+            <div class="analysis-card">
+                <h6>📊 Workload Classification</h6>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #667eea; margin: 1rem 0;">
+                    {workload.get('workload_type', 'Mixed')}
                 </div>
-                <h5>🎯 Key Recommendations:</h5>
-                <ul>
-                    {''.join([f'<li>{rec}</li>' for rec in workload.get('recommendations', [])[:4]])}
-                </ul>
+                <p style="color: #64748b; font-size: 0.9rem;">
+                    Based on CPU/RAM patterns and usage characteristics
+                </p>
             </div>
             """, unsafe_allow_html=True)
         
-        if 'migration' in ai_insights and 'error' not in ai_insights['migration']:
-            st.subheader("🚀 AI-Generated Migration Strategy")
+        with insight_cols[1]:
+            complexity = workload.get('complexity', 'Medium')
+            complexity_color = "#ef4444" if complexity == "High" else "#f59e0b" if complexity == "Medium" else "#10b981"
+            st.markdown(f"""
+            <div class="analysis-card">
+                <h6>⚙️ Migration Complexity</h6>
+                <div style="font-size: 1.5rem; font-weight: bold; color: {complexity_color}; margin: 1rem 0;">
+                    {complexity}
+                </div>
+                <p style="color: #64748b; font-size: 0.9rem;">
+                    Risk assessment and effort estimation
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with insight_cols[2]:
+            timeline = workload.get('timeline', '12-16 weeks')
+            st.markdown(f"""
+            <div class="analysis-card">
+                <h6>⏱️ Estimated Timeline</h6>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6; margin: 1rem 0;">
+                    {timeline}
+                </div>
+                <p style="color: #64748b; font-size: 0.9rem;">
+                    End-to-end migration duration
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # AI Recommendations
+        recommendations = workload.get('recommendations', [])
+        if recommendations:
+            st.markdown("##### 🎯 AI-Generated Recommendations")
             
-            migration = ai_insights['migration']
+            rec_cols = st.columns(2)
+            mid_point = len(recommendations) // 2
             
-            col1, col2 = st.columns(2)
+            with rec_cols[0]:
+                for i, rec in enumerate(recommendations[:mid_point], 1):
+                    st.markdown(f"""
+                    <div style="background: #f8fafc; border-left: 4px solid #667eea; padding: 1rem; margin: 0.5rem 0; border-radius: 0 8px 8px 0;">
+                        <strong>{i}.</strong> {rec}
+                    </div>
+                    """, unsafe_allow_html=True)
             
-            with col1:
-                st.markdown("#### 📅 Migration Timeline")
-                st.info(f"**Estimated Duration:** {migration.get('timeline', '14-18 weeks')}")
-                
-                phases = migration.get('phases', [])
-                for i, phase in enumerate(phases, 1):
-                    st.markdown(f"**Phase {i}:** {phase}")
+            with rec_cols[1]:
+                for i, rec in enumerate(recommendations[mid_point:], mid_point + 1):
+                    st.markdown(f"""
+                    <div style="background: #f8fafc; border-left: 4px solid #667eea; padding: 1rem; margin: 0.5rem 0; border-radius: 0 8px 8px 0;">
+                        <strong>{i}.</strong> {rec}
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # Risk Assessment
+        risks = workload.get('risks', [])
+        bottlenecks = workload.get('bottlenecks', [])
+        
+        if risks or bottlenecks:
+            st.markdown("##### ⚠️ Risk Assessment & Bottlenecks")
             
-            with col2:
-                st.markdown("#### 👥 Required Resources")
-                resources = migration.get('resources', [])
-                for resource in resources:
-                    st.markdown(f"• {resource}")
-                
-                st.markdown("#### 🛠️ Recommended Tools")
-                tools = migration.get('tools', [])
-                for tool in tools[:4]:
-                    st.markdown(f"• {tool}")
+            risk_cols = st.columns(2)
+            
+            with risk_cols[0]:
+                if risks:
+                    st.markdown("**🔍 Identified Risks:**")
+                    for risk in risks[:3]:
+                        st.markdown(f"""
+                        <div class="status-card status-warning" style="margin: 0.5rem 0;">
+                            • {risk}
+                        </div>
+                        """, unsafe_allow_html=True)
+            
+            with risk_cols[1]:
+                if bottlenecks:
+                    st.markdown("**⚡ Performance Bottlenecks:**")
+                    for bottleneck in bottlenecks[:3]:
+                        st.markdown(f"""
+                        <div class="status-card status-info" style="margin: 0.5rem 0;">
+                            • {bottleneck}
+                        </div>
+                        """, unsafe_allow_html=True)
     
-    # Environment-specific recommendations
-    st.subheader("🏗️ Environment Recommendations")
+    # Error handling
+    if 'workload' in ai_insights and 'error' in ai_insights['workload']:
+        st.markdown(f"""
+        <div class="status-card status-error">
+            <strong>❌ AI Analysis Error</strong><br>
+            {ai_insights['workload']['error']}
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_recommendations_tab(recommendations, inputs):
+    """Render environment recommendations"""
+    st.markdown("#### 🏗️ Environment-Specific Recommendations")
     
-    df_data = []
+    # Environment comparison table
+    st.markdown("##### 📊 Configuration Comparison")
+    
+    env_data = []
     for env, rec in recommendations.items():
-        df_data.append({
-            'Environment': env,
+        env_icon = {"PROD": "🔴", "STAGING": "🟡", "QA": "🔵", "DEV": "🟢"}
+        env_data.append({
+            'Environment': f"{env_icon.get(env, '⚪')} {env}",
             'Instance Type': rec['instance_type'],
             'vCPUs': rec['vcpus'],
             'RAM (GB)': rec['ram_gb'],
-            'Storage (GB)': rec['storage_gb'],
+            'Storage (GB)': f"{rec['storage_gb']:,}",
             'Monthly Cost': rec['monthly_cost'],
-            'Optimization Score': f"{rec.get('optimization_score', 85)}%"
+            'Annual Cost': rec['annual_cost'],
+            'Optimization': f"{rec.get('optimization_score', 85)}%"
         })
     
-    df = pd.DataFrame(df_data)
-    
+    env_df = pd.DataFrame(env_data)
     st.dataframe(
-        df,
+        env_df,
         column_config={
             "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f"),
-            "Optimization Score": st.column_config.TextColumn("Optimization Score")
+            "Annual Cost": st.column_config.NumberColumn("Annual Cost", format="$%.0f")
         },
         use_container_width=True,
         hide_index=True
     )
     
-    # Cost Analysis Charts
-    st.subheader("💰 Cost Analysis & Projections")
+    # Detailed environment breakdown
+    st.markdown("##### 🎯 Environment Details")
     
-    col1, col2 = st.columns(2)
+    env_details_cols = st.columns(2)
     
-    with col1:
+    with env_details_cols[0]:
+        # Production details
+        prod_rec = recommendations['PROD']
+        st.markdown(f"""
+        <div class="config-section">
+            <div class="config-header">🔴 Production Environment</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 1rem 0;">
+                <div><strong>Instance:</strong></div><div>{prod_rec['instance_type']}</div>
+                <div><strong>Compute:</strong></div><div>{prod_rec['vcpus']} vCPUs, {prod_rec['ram_gb']} GB RAM</div>
+                <div><strong>Storage:</strong></div><div>{prod_rec['storage_gb']:,} GB</div>
+                <div><strong>Monthly Cost:</strong></div><div style="color: #10b981; font-weight: bold;">${prod_rec['monthly_cost']:,.0f}</div>
+                <div><strong>Optimization:</strong></div><div>{prod_rec.get('optimization_score', 85)}%</div>
+            </div>
+            <div style="background: #f0f9ff; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                <strong>💡 Key Features:</strong><br>
+                • High availability with Multi-AZ deployment<br>
+                • Automated backups and point-in-time recovery<br>
+                • Performance monitoring and alerting<br>
+                • Enhanced security and compliance
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with env_details_cols[1]:
+        # Development details
+        dev_rec = recommendations['DEV']
+        st.markdown(f"""
+        <div class="config-section">
+            <div class="config-header">🟢 Development Environment</div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin: 1rem 0;">
+                <div><strong>Instance:</strong></div><div>{dev_rec['instance_type']}</div>
+                <div><strong>Compute:</strong></div><div>{dev_rec['vcpus']} vCPUs, {dev_rec['ram_gb']} GB RAM</div>
+                <div><strong>Storage:</strong></div><div>{dev_rec['storage_gb']:,} GB</div>
+                <div><strong>Monthly Cost:</strong></div><div style="color: #10b981; font-weight: bold;">${dev_rec['monthly_cost']:,.0f}</div>
+                <div><strong>Optimization:</strong></div><div>{dev_rec.get('optimization_score', 85)}%</div>
+            </div>
+            <div style="background: #f0fdf4; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                <strong>💡 Key Features:</strong><br>
+                • Cost-optimized for development workloads<br>
+                • Flexible instance sizing<br>
+                • Development-friendly backup policies<br>
+                • Easy environment refresh capabilities
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+def render_cost_analysis_tab(recommendations, inputs):
+    """Render detailed cost analysis"""
+    st.markdown("#### 💰 Comprehensive Cost Analysis")
+    
+    # Cost visualization
+    cost_vis_cols = st.columns(2)
+    
+    with cost_vis_cols[0]:
+        # Environment cost comparison
         env_costs = [rec['monthly_cost'] for rec in recommendations.values()]
         env_names = list(recommendations.keys())
         
         fig1 = px.bar(
-            x=env_names, 
+            x=env_names,
             y=env_costs,
             title="Monthly Cost by Environment",
             labels={'x': 'Environment', 'y': 'Monthly Cost ($)'},
@@ -1172,352 +1878,774 @@ def display_results(recommendations, ai_insights, inputs):
             text=[f'${cost:,.0f}' for cost in env_costs]
         )
         fig1.update_traces(textposition='outside')
-        fig1.update_layout(showlegend=False, height=400)
+        fig1.update_layout(
+            showlegend=False, 
+            height=400,
+            title_font_size=16,
+            xaxis_title_font_size=14,
+            yaxis_title_font_size=14
+        )
         st.plotly_chart(fig1, use_container_width=True)
     
-    with col2:
+    with cost_vis_cols[1]:
+        # Production cost breakdown
+        prod_rec = recommendations['PROD']
         cost_breakdown = prod_rec.get('cost_breakdown', {})
-        if cost_breakdown:
-            labels = list(cost_breakdown.keys())
-            values = list(cost_breakdown.values())
+        
+        if cost_breakdown and 'total' in cost_breakdown:
+            # Remove total from breakdown for pie chart
+            breakdown_for_chart = {k: v for k, v in cost_breakdown.items() if k != 'total'}
             
             fig2 = px.pie(
-                values=values,
-                names=labels,
+                values=list(breakdown_for_chart.values()),
+                names=[k.replace('_', ' ').title() for k in breakdown_for_chart.keys()],
                 title="Production Cost Breakdown"
             )
             fig2.update_traces(textposition='inside', textinfo='percent+label')
-            fig2.update_layout(height=400)
+            fig2.update_layout(height=400, title_font_size=16)
             st.plotly_chart(fig2, use_container_width=True)
     
-    # Executive Summary
-    st.subheader("📋 Executive Summary")
+    # Cost comparison with on-premise
+    st.markdown("##### 📊 Cost Comparison & Savings Analysis")
     
-    annual_savings = (inputs['cores'] * 200 * 12) - prod_rec['annual_cost']
-    roi_percentage = (annual_savings / prod_rec['annual_cost']) * 100 if prod_rec['annual_cost'] > 0 else 0
+    # Calculate savings
+    onprem_monthly = inputs['cores'] * 200  # Estimated on-premise cost
+    cloud_monthly = recommendations['PROD']['monthly_cost']
+    monthly_savings = onprem_monthly - cloud_monthly
+    annual_savings = monthly_savings * 12
     
-    st.markdown(f"""
-    <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
-                border: 1px solid #0ea5e9; border-radius: 12px; padding: 2rem; margin: 1rem 0; color: #1E293B;">
-        <h4 style="color: #1E293B;">💼 Executive Summary</h4>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin: 1rem 0;">
-            <div>
-                <h5 style="color: #1E293B;">💰 Financial Impact</h5>
-                <p style="color: #1E293B;">• <strong>Annual Cost:</strong> ${prod_rec['annual_cost']:,.0f}</p>
-                <p style="color: #1E293B;">• <strong>Annual Savings:</strong> ${annual_savings:,.0f}</p>
-                <p style="color: #1E293B;">• <strong>ROI:</strong> {roi_percentage:.0f}%</p>
-            </div>
-            <div>
-                <h5 style="color: #1E293B;">⚡ Performance Benefits</h5>
-                <p style="color: #1E293B;">• <strong>Improved Availability:</strong> 99.99% SLA</p>
-                <p style="color: #1E293B;">• <strong>Auto Scaling:</strong> Dynamic resource allocation</p>
-                <p style="color: #1E293B;">• <strong>Backup & Recovery:</strong> Automated & reliable</p>
-            </div>
-            <div>
-                <h5 style="color: #1E293B;">🎯 Strategic Advantages</h5>
-                <p style="color: #1E293B;">• <strong>Reduced Ops Overhead:</strong> Managed service benefits</p>
-                <p style="color: #1E293B;">• <strong>Enhanced Security:</strong> AWS security framework</p>
-                <p style="color: #1E293B;">• <strong>Global Scalability:</strong> Multi-region deployment ready</p>
-            </div>
-        </div>
-        <div style="background: rgba(16, 185, 129, 0.1); padding: 1rem; border-radius: 8px; margin-top: 1rem; color: #1E293B;">
-            <strong style="color: #1E293B;">💡 Recommendation:</strong> Proceed with migration to achieve significant cost savings, 
-            improved performance, and reduced operational complexity. Estimated payback period: 
-            {12 / max(roi_percentage/100, 0.1):.0f} months.
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
+    savings_cols = st.columns(4)
+    
+    with savings_cols[0]:
+        st.metric("On-Premise (Est.)", f"${onprem_monthly:,.0f}/mo")
+    with savings_cols[1]:
+        st.metric("AWS Cloud", f"${cloud_monthly:,.0f}/mo")
+    with savings_cols[2]:
+        st.metric("Monthly Savings", f"${monthly_savings:,.0f}", delta=f"{(monthly_savings/onprem_monthly)*100:.0f}%")
+    with savings_cols[3]:
+        st.metric("Annual Savings", f"${annual_savings:,.0f}")
+    
+    # 3-year projection
+    st.markdown("##### 📈 3-Year Cost Projection")
+    
+    years = list(range(1, 4))
+    growth_rate = inputs.get('growth', 15) / 100
+    
+    onprem_costs = [onprem_monthly * 12 * (1 + growth_rate) ** (year - 1) for year in years]
+    cloud_costs = [cloud_monthly * 12 * (1 + growth_rate * 0.7) ** (year - 1) for year in years]  # Cloud scales better
+    
+    projection_df = pd.DataFrame({
+        'Year': years,
+        'On-Premise': onprem_costs,
+        'AWS Cloud': cloud_costs,
+        'Savings': [op - cl for op, cl in zip(onprem_costs, cloud_costs)]
+    })
+    
+    fig3 = px.line(
+        projection_df, 
+        x='Year', 
+        y=['On-Premise', 'AWS Cloud'],
+        title="3-Year Cost Projection",
+        labels={'value': 'Annual Cost ($)', 'variable': 'Infrastructure'}
+    )
+    fig3.update_layout(height=400, title_font_size=16)
+    st.plotly_chart(fig3, use_container_width=True)
 
-def display_file_results(all_results):
-    """Display results from file analysis with professional layout"""
-    st.subheader("📊 Multi-Database Migration Analysis")
+def render_future_planning_tab(ai_insights, recommendations, inputs):
+    """Render future planning insights"""
+    st.markdown("#### 📈 Future Planning & Predictions")
     
-    # Executive Dashboard
-    st.markdown("### 📈 Executive Dashboard")
+    if 'predictions' in ai_insights and 'error' not in ai_insights['predictions']:
+        predictions = ai_insights['predictions']
+        
+        # Prediction summary
+        st.markdown("""
+        <div class="ai-insight">
+            <h4>🔮 AI-Powered Future Predictions</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        prediction_cols = st.columns(3)
+        
+        with prediction_cols[0]:
+            st.markdown(f"""
+            <div class="analysis-card">
+                <h6>💻 CPU Trend</h6>
+                <p style="font-weight: bold; color: #667eea; margin: 1rem 0;">
+                    {predictions.get('cpu_trend', 'Gradual increase expected')}
+                </p>
+                <p style="color: #64748b; font-size: 0.9rem;">
+                    Based on workload analysis and growth patterns
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with prediction_cols[1]:
+            st.markdown(f"""
+            <div class="analysis-card">
+                <h6>🧠 Memory Trend</h6>
+                <p style="font-weight: bold; color: #10b981; margin: 1rem 0;">
+                    {predictions.get('memory_trend', 'Stable with seasonal peaks')}
+                </p>
+                <p style="color: #64748b; font-size: 0.9rem;">
+                    Memory usage patterns and optimization opportunities
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with prediction_cols[2]:
+            st.markdown(f"""
+            <div class="analysis-card">
+                <h6>💾 Storage Trend</h6>
+                <p style="font-weight: bold; color: #f59e0b; margin: 1rem 0;">
+                    {predictions.get('storage_trend', 'Linear growth with data retention')}
+                </p>
+                <p style="color: #64748b; font-size: 0.9rem;">
+                    Data growth patterns and retention policies
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Future recommendations
+        future_recs = predictions.get('recommendations', [])
+        if future_recs:
+            st.markdown("##### 🎯 Future Planning Recommendations")
+            
+            for i, rec in enumerate(future_recs, 1):
+                st.markdown(f"""
+                <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
+                            border-left: 4px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 0 8px 8px 0;">
+                    <strong>{i}.</strong> {rec}
+                </div>
+                """, unsafe_allow_html=True)
+        
+        # Confidence and factors
+        confidence_cols = st.columns(2)
+        
+        with confidence_cols[0]:
+            confidence = predictions.get('confidence', 'High (85-90%)')
+            st.markdown(f"""
+            <div class="config-section">
+                <div class="config-header">📊 Prediction Confidence</div>
+                <div style="font-size: 1.2rem; font-weight: bold; color: #10b981; margin: 1rem 0;">
+                    {confidence}
+                </div>
+                <p style="color: #64748b;">
+                    Based on historical data patterns, industry benchmarks, and AI analysis
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with confidence_cols[1]:
+            key_factors = predictions.get('key_factors', [])
+            if key_factors:
+                st.markdown("""
+                <div class="config-section">
+                    <div class="config-header">🔍 Key Factors</div>
+                """, unsafe_allow_html=True)
+                
+                for factor in key_factors:
+                    st.markdown(f"• {factor}")
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+    else:
+        # Show basic projections without AI
+        st.markdown("##### 📊 Basic Growth Projections")
+        
+        growth_rate = inputs.get('growth', 15)
+        years = list(range(1, 6))
+        
+        current_storage = inputs['storage']
+        projected_storage = [current_storage * (1 + growth_rate/100) ** year for year in years]
+        
+        current_cost = recommendations['PROD']['monthly_cost']
+        projected_costs = [current_cost * (1 + growth_rate/100 * 0.8) ** year for year in years]
+        
+        projection_df = pd.DataFrame({
+            'Year': [f"Year {y}" for y in years],
+            'Storage (GB)': [f"{storage:,.0f}" for storage in projected_storage],
+            'Estimated Cost': [f"${cost:,.0f}" for cost in projected_costs]
+        })
+        
+        st.dataframe(projection_df, use_container_width=True, hide_index=True)
+        
+        st.info("💡 Enable AI predictions for detailed future analysis including CPU, memory trends, and confidence intervals.")
+
+def render_migration_strategy_tab(ai_insights, recommendations):
+    """Render migration strategy details"""
+    st.markdown("#### 🚀 Migration Strategy & Implementation")
     
+    if 'migration' in ai_insights and 'error' not in ai_insights['migration']:
+        migration = ai_insights['migration']
+        
+        st.markdown("""
+        <div class="ai-insight">
+            <h4>📋 AI-Generated Migration Strategy</h4>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Migration phases
+        st.markdown("##### 📅 Migration Phases")
+        
+        phases = migration.get('phases', [])
+        if phases:
+            phase_cols = st.columns(len(phases))
+            
+            for i, (phase, col) in enumerate(zip(phases, phase_cols), 1):
+                with col:
+                    st.markdown(f"""
+                    <div class="analysis-card" style="text-align: center;">
+                        <div style="background: #667eea; color: white; border-radius: 50%; width: 40px; height: 40px; 
+                                    display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-weight: bold;">
+                            {i}
+                        </div>
+                        <h6 style="margin: 0;">{phase}</h6>
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # Timeline and resources
+        strategy_cols = st.columns(2)
+        
+        with strategy_cols[0]:
+            timeline = migration.get('timeline', '14-18 weeks')
+            st.markdown(f"""
+            <div class="config-section">
+                <div class="config-header">⏱️ Estimated Timeline</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #8b5cf6; margin: 1rem 0;">
+                    {timeline}
+                </div>
+                <p style="color: #64748b;">
+                    End-to-end migration including testing and validation phases
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Required resources
+            resources = migration.get('resources', [])
+            if resources:
+                st.markdown("**👥 Required Team Members:**")
+                for resource in resources:
+                    st.markdown(f"• {resource}")
+        
+        with strategy_cols[1]:
+            # Migration tools
+            tools = migration.get('tools', [])
+            if tools:
+                st.markdown("""
+                <div class="config-section">
+                    <div class="config-header">🛠️ Recommended Tools</div>
+                """, unsafe_allow_html=True)
+                
+                for tool in tools:
+                    st.markdown(f"• {tool}")
+                
+                st.markdown("</div>", unsafe_allow_html=True)
+        
+        # Pre-migration checklist
+        checklist = migration.get('checklist', [])
+        if checklist:
+            st.markdown("##### ✅ Pre-Migration Checklist")
+            
+            checklist_cols = st.columns(2)
+            mid_point = len(checklist) // 2
+            
+            with checklist_cols[0]:
+                for item in checklist[:mid_point]:
+                    st.markdown(f"""
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
+                        <input type="checkbox" style="margin-right: 0.5rem;"> {item}
+                    </div>
+                    """, unsafe_allow_html=True)
+            
+            with checklist_cols[1]:
+                for item in checklist[mid_point:]:
+                    st.markdown(f"""
+                    <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
+                        <input type="checkbox" style="margin-right: 0.5rem;"> {item}
+                    </div>
+                    """, unsafe_allow_html=True)
+        
+        # Risk mitigation
+        risks = migration.get('risks', [])
+        if risks:
+            st.markdown("##### ⚠️ Risk Mitigation Strategy")
+            
+            for i, risk in enumerate(risks, 1):
+                st.markdown(f"""
+                <div class="status-card status-warning" style="margin: 0.5rem 0;">
+                    <strong>Risk {i}:</strong> {risk}
+                </div>
+                """, unsafe_allow_html=True)
+    
+    else:
+        # Basic migration strategy without AI
+        st.markdown("##### 📋 Standard Migration Approach")
+        
+        basic_phases = [
+            "Assessment & Planning",
+            "Environment Setup",
+            "Data Migration",
+            "Application Testing",
+            "Go-Live & Optimization"
+        ]
+        
+        phase_cols = st.columns(len(basic_phases))
+        for i, (phase, col) in enumerate(zip(basic_phases, phase_cols), 1):
+            with col:
+                st.markdown(f"""
+                <div class="analysis-card" style="text-align: center;">
+                    <div style="background: #94a3b8; color: white; border-radius: 50%; width: 40px; height: 40px; 
+                                display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem auto; font-weight: bold;">
+                        {i}
+                    </div>
+                    <h6 style="margin: 0;">{phase}</h6>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        st.info("💡 Enable AI migration strategy generation for detailed implementation roadmap, resource planning, and risk assessment.")
+
+def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy):
+    """Analyze multiple databases from uploaded file with enhanced progress tracking"""
+    
+    st.markdown("### 🔄 Bulk Database Analysis")
+    
+    # Progress setup
+    progress_container = st.container()
+    with progress_container:
+        overall_progress = st.progress(0)
+        current_db = st.empty()
+        stage_status = st.empty()
+        
+        # Results summary
+        results_summary = st.empty()
+    
+    all_results = []
+    
+    try:
+        total_databases = len(valid_inputs)
+        
+        for i, inputs in enumerate(valid_inputs):
+            db_name = inputs.get('db_name', f'Database {i+1}')
+            current_db.text(f"🔄 Analyzing: {db_name} ({i+1}/{total_databases})")
+            
+            # Basic calculations
+            stage_status.text("📊 Calculating resource requirements...")
+            calculator = st.session_state.calculator
+            recommendations = {}
+            for env in calculator.env_profiles:
+                recommendations[env] = calculator.calculate_requirements(inputs, env)
+            
+            # AI Analysis
+            ai_insights = {}
+            if st.session_state.ai_analytics:
+                if enable_ai_analysis:
+                    stage_status.text("🤖 Running AI workload analysis...")
+                    try:
+                        workload_analysis = st.session_state.ai_analytics.analyze_workload_patterns(inputs)
+                        ai_insights['workload'] = workload_analysis
+                    except Exception as e:
+                        ai_insights['workload'] = {"error": str(e)}
+                
+                if enable_predictions:
+                    stage_status.text("🔮 Generating predictions...")
+                    try:
+                        predictions = st.session_state.ai_analytics.predict_future_requirements(inputs, inputs.get('years', 3))
+                        ai_insights['predictions'] = predictions
+                    except Exception as e:
+                        ai_insights['predictions'] = {"error": str(e)}
+                
+                if enable_migration_strategy:
+                    stage_status.text("📋 Creating migration strategy...")
+                    try:
+                        migration_strategy = st.session_state.ai_analytics.generate_migration_strategy(recommendations['PROD'])
+                        ai_insights['migration'] = migration_strategy
+                    except Exception as e:
+                        ai_insights['migration'] = {"error": str(e)}
+            
+            all_results.append({
+                'inputs': inputs,
+                'recommendations': recommendations,
+                'ai_insights': ai_insights
+            })
+            
+            # Update progress
+            progress = (i + 1) / total_databases
+            overall_progress.progress(progress)
+            
+            # Update summary
+            completed = i + 1
+            total_cost = sum(result['recommendations']['PROD']['monthly_cost'] for result in all_results)
+            results_summary.markdown(f"""
+            **Progress:** {completed}/{total_databases} databases analyzed  
+            **Total Monthly Cost:** ${total_cost:,.0f}  
+            **Average Cost:** ${total_cost/completed:,.0f} per database
+            """)
+        
+        # Analysis complete
+        current_db.text("✅ Analysis complete for all databases!")
+        stage_status.text("🎉 All databases analyzed successfully")
+        
+        # Clear progress after a moment
+        time.sleep(2)
+        progress_container.empty()
+        
+        # Display comprehensive results
+        display_bulk_results(all_results)
+        
+    except Exception as e:
+        progress_container.empty()
+        st.error(f"Bulk analysis failed: {str(e)}")
+
+def display_bulk_results(all_results):
+    """Display results from bulk analysis with enhanced visualization"""
+    st.markdown("### 📊 Bulk Analysis Results")
+    
+    # Executive dashboard
     total_monthly = sum(result['recommendations']['PROD']['monthly_cost'] for result in all_results)
-    total_annual = sum(result['recommendations']['PROD']['annual_cost'] for result in all_results)
+    total_annual = total_monthly * 12
     avg_monthly = total_monthly / len(all_results)
-    avg_optimization = sum(result['recommendations']['PROD'].get('optimization_score', 85) for result in all_results) / len(all_results)
     
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("Total Databases", len(all_results))
-    with col2:
-        st.metric("Total Monthly Cost", f"${total_monthly:,.0f}")
-    with col3:
-        st.metric("Average per Database", f"${avg_monthly:,.0f}/mo")
-    with col4:
-        st.metric("Avg Optimization Score", f"{avg_optimization:.0f}%")
+    # Calculate total on-premise estimate
+    total_onprem = sum(result['inputs']['cores'] * 200 for result in all_results)
+    total_savings = total_onprem - total_monthly
+    savings_percentage = (total_savings / total_onprem) * 100 if total_onprem > 0 else 0
     
-    # Create main analysis tabs
-    analysis_tabs = st.tabs([
-        "📋 Summary Table", 
+    dashboard_cols = st.columns(4)
+    
+    with dashboard_cols[0]:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Total Databases</div>
+            <div class="metric-value">{len(all_results)}</div>
+            <div class="metric-subtitle">Successfully Analyzed</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with dashboard_cols[1]:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Total Monthly Cost</div>
+            <div class="metric-value" style="color: #10b981;">${total_monthly:,.0f}</div>
+            <div class="metric-subtitle">AWS Production Environment</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with dashboard_cols[2]:
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Monthly Savings</div>
+            <div class="metric-value" style="color: #10b981;">${total_savings:,.0f}</div>
+            <div class="metric-subtitle">{savings_percentage:.0f}% vs On-Premise</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with dashboard_cols[3]:
+        avg_optimization = sum(result['recommendations']['PROD'].get('optimization_score', 85) for result in all_results) / len(all_results)
+        st.markdown(f"""
+        <div class="metric-card">
+            <div class="metric-label">Avg Optimization</div>
+            <div class="metric-value" style="color: #8b5cf6;">{avg_optimization:.0f}%</div>
+            <div class="metric-subtitle">Resource Efficiency</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # Results tabs
+    bulk_tabs = st.tabs([
+        "📊 Summary Dashboard", 
         "🤖 AI Intelligence", 
         "💰 Cost Analysis", 
-        "🔍 Individual Analysis",
-        "📄 Export Reports"
+        "🔍 Individual Results",
+        "📄 Export & Reports"
     ])
     
-    with analysis_tabs[0]:  # Summary Table
-        st.markdown("#### 📊 Database Configuration Summary")
+    with bulk_tabs[0]:  # Summary Dashboard
+        render_bulk_summary_tab(all_results)
+    
+    with bulk_tabs[1]:  # AI Intelligence
+        render_bulk_ai_tab(all_results)
+    
+    with bulk_tabs[2]:  # Cost Analysis
+        render_bulk_cost_tab(all_results)
+    
+    with bulk_tabs[3]:  # Individual Results
+        render_bulk_individual_tab(all_results)
+    
+    with bulk_tabs[4]:  # Export & Reports
+        render_bulk_export_tab(all_results)
+
+def render_bulk_summary_tab(all_results):
+    """Render bulk summary dashboard"""
+    st.markdown("#### 📊 Database Portfolio Summary")
+    
+    # Create summary table
+    summary_data = []
+    for i, result in enumerate(all_results, 1):
+        prod_rec = result['recommendations']['PROD']
+        inputs = result['inputs']
         
-        summary_data = []
+        summary_data.append({
+            "#": i,
+            "Database": inputs.get('db_name', f'Database {i}'),
+            "Engine": inputs.get('engine', 'Unknown'),
+            "Region": inputs.get('region', 'Unknown'),
+            "Instance Type": prod_rec['instance_type'],
+            "vCPUs": prod_rec['vcpus'],
+            "RAM (GB)": prod_rec['ram_gb'],
+            "Storage (GB)": f"{prod_rec['storage_gb']:,}",
+            "Monthly Cost": prod_rec['monthly_cost'],
+            "Annual Cost": prod_rec['annual_cost'],
+            "Optimization": f"{prod_rec.get('optimization_score', 85)}%"
+        })
+    
+    summary_df = pd.DataFrame(summary_data)
+    
+    st.dataframe(
+        summary_df,
+        column_config={
+            "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f"),
+            "Annual Cost": st.column_config.NumberColumn("Annual Cost", format="$%.0f")
+        },
+        use_container_width=True,
+        hide_index=True
+    )
+    
+    # Quick statistics
+    st.markdown("#### 📈 Portfolio Statistics")
+    
+    stats_cols = st.columns(3)
+    
+    with stats_cols[0]:
+        # Engine distribution
+        engine_counts = {}
         for result in all_results:
-            prod_rec = result['recommendations']['PROD']
-            summary_data.append({
-                "Database": result['inputs'].get('db_name', 'N/A'),
-                "Engine": result['inputs'].get('engine', 'N/A'),
-                "Instance Type": prod_rec['instance_type'],
-                "vCPUs": prod_rec['vcpus'],
-                "RAM (GB)": prod_rec['ram_gb'],
-                "Storage (GB)": prod_rec['storage_gb'],
-                "Monthly Cost": prod_rec['monthly_cost'],
-                "Annual Cost": prod_rec['annual_cost'],
-                "Optimization": f"{prod_rec.get('optimization_score', 85)}%"
-            })
+            engine = result['inputs'].get('engine', 'Unknown')
+            engine_counts[engine] = engine_counts.get(engine, 0) + 1
         
-        summary_df = pd.DataFrame(summary_data)
+        st.markdown("**Database Engines:**")
+        for engine, count in engine_counts.items():
+            percentage = (count / len(all_results)) * 100
+            st.markdown(f"• **{engine}:** {count} ({percentage:.1f}%)")
+    
+    with stats_cols[1]:
+        # Region distribution
+        region_counts = {}
+        for result in all_results:
+            region = result['inputs'].get('region', 'Unknown')
+            region_counts[region] = region_counts.get(region, 0) + 1
         
-        st.dataframe(
-            summary_df,
-            column_config={
-                "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f"),
-                "Annual Cost": st.column_config.NumberColumn("Annual Cost", format="$%.0f"),
-                "Optimization": st.column_config.TextColumn("Optimization Score")
-            },
-            use_container_width=True,
-            hide_index=True
-        )
+        st.markdown("**AWS Regions:**")
+        for region, count in region_counts.items():
+            percentage = (count / len(all_results)) * 100
+            st.markdown(f"• **{region}:** {count} ({percentage:.1f}%)")
+    
+    with stats_cols[2]:
+        # Cost ranges
+        costs = [result['recommendations']['PROD']['monthly_cost'] for result in all_results]
+        min_cost = min(costs)
+        max_cost = max(costs)
+        median_cost = sorted(costs)[len(costs)//2]
         
-        # Quick stats
-        st.markdown("#### 📈 Quick Statistics")
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            engine_counts = {}
-            for result in all_results:
-                engine = result['inputs'].get('engine', 'Unknown')
-                engine_counts[engine] = engine_counts.get(engine, 0) + 1
+        st.markdown("**Cost Distribution:**")
+        st.markdown(f"• **Minimum:** ${min_cost:,.0f}/month")
+        st.markdown(f"• **Median:** ${median_cost:,.0f}/month")
+        st.markdown(f"• **Maximum:** ${max_cost:,.0f}/month")
+
+def render_bulk_ai_tab(all_results):
+    """Render bulk AI intelligence summary"""
+    st.markdown("#### 🤖 AI Intelligence Aggregation")
+    
+    ai_available = any(result.get('ai_insights') for result in all_results)
+    
+    if not ai_available:
+        st.info("🔑 AI analysis requires a Claude API key. Configure in sidebar and re-run analysis for AI insights.")
+        return
+    
+    # Aggregate AI insights
+    workload_types = {}
+    complexity_levels = {}
+    all_recommendations = []
+    
+    for result in all_results:
+        ai_insights = result.get('ai_insights', {})
+        if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
+            workload = ai_insights['workload']
             
-            st.markdown("**Database Engines:**")
-            for engine, count in engine_counts.items():
+            # Aggregate workload types
+            wtype = workload.get('workload_type', 'Unknown')
+            workload_types[wtype] = workload_types.get(wtype, 0) + 1
+            
+            # Aggregate complexity
+            complexity = workload.get('complexity', 'Unknown')
+            complexity_levels[complexity] = complexity_levels.get(complexity, 0) + 1
+            
+            # Collect recommendations
+            all_recommendations.extend(workload.get('recommendations', []))
+    
+    # Display aggregated insights
+    ai_cols = st.columns(2)
+    
+    with ai_cols[0]:
+        if workload_types:
+            st.markdown("##### 📊 Workload Type Distribution")
+            
+            fig_workload = px.pie(
+                values=list(workload_types.values()),
+                names=list(workload_types.keys()),
+                title="Database Workload Types"
+            )
+            fig_workload.update_traces(textposition='inside', textinfo='percent+label')
+            fig_workload.update_layout(height=350)
+            st.plotly_chart(fig_workload, use_container_width=True)
+    
+    with ai_cols[1]:
+        if complexity_levels:
+            st.markdown("##### ⚙️ Migration Complexity Assessment")
+            
+            complexity_colors = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#10b981"}
+            
+            for complexity, count in complexity_levels.items():
                 percentage = (count / len(all_results)) * 100
-                st.write(f"• {engine}: {count} databases ({percentage:.1f}%)")
+                color = complexity_colors.get(complexity, "#64748b")
+                
+                st.markdown(f"""
+                <div style="background: {color}20; border-left: 4px solid {color}; padding: 1rem; margin: 0.5rem 0; border-radius: 0 8px 8px 0;">
+                    <strong>{complexity} Complexity:</strong> {count} databases ({percentage:.1f}%)
+                </div>
+                """, unsafe_allow_html=True)
+    
+    # Top recommendations
+    if all_recommendations:
+        st.markdown("##### 🎯 Most Common AI Recommendations")
         
-        with col2:
-            region_counts = {}
-            for result in all_results:
-                region = result['inputs'].get('region', 'Unknown')
-                region_counts[region] = region_counts.get(region, 0) + 1
-            
-            st.markdown("**AWS Regions:**")
-            for region, count in region_counts.items():
+        from collections import Counter
+        rec_counts = Counter(all_recommendations)
+        
+        top_recs = rec_counts.most_common(6)
+        rec_cols = st.columns(2)
+        
+        with rec_cols[0]:
+            for i in range(0, len(top_recs), 2):
+                rec, count = top_recs[i]
                 percentage = (count / len(all_results)) * 100
-                st.write(f"• {region}: {count} databases ({percentage:.1f}%)")
+                st.markdown(f"""
+                <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
+                    <strong>{rec}</strong><br>
+                    <small style="color: #64748b;">Recommended for {count} databases ({percentage:.0f}%)</small>
+                </div>
+                """, unsafe_allow_html=True)
+        
+        with rec_cols[1]:
+            for i in range(1, len(top_recs), 2):
+                if i < len(top_recs):
+                    rec, count = top_recs[i]
+                    percentage = (count / len(all_results)) * 100
+                    st.markdown(f"""
+                    <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
+                        <strong>{rec}</strong><br>
+                        <small style="color: #64748b;">Recommended for {count} databases ({percentage:.0f}%)</small>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+def render_bulk_cost_tab(all_results):
+    """Render bulk cost analysis"""
+    st.markdown("#### 💰 Portfolio Cost Analysis")
     
-    with analysis_tabs[1]:  # AI Intelligence
-        st.markdown("#### 🤖 AI-Powered Migration Intelligence")
-        
-        ai_available = any(result.get('ai_insights') for result in all_results)
-        
-        if not ai_available:
-            st.info("🔑 AI analysis requires a Claude API key. Enter your API key in the sidebar and re-run the analysis to see AI insights.")
-        else:
-            # Aggregate AI insights
-            workload_types = {}
-            complexity_levels = {}
-            common_recommendations = []
-            migration_timelines = []
-            
-            for result in all_results:
-                ai_insights = result.get('ai_insights', {})
-                if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
-                    workload = ai_insights['workload']
-                    
-                    wtype = workload.get('workload_type', 'Unknown')
-                    workload_types[wtype] = workload_types.get(wtype, 0) + 1
-                    
-                    complexity = workload.get('complexity', 'Unknown')
-                    complexity_levels[complexity] = complexity_levels.get(complexity, 0) + 1
-                    
-                    common_recommendations.extend(workload.get('recommendations', []))
-                    
-                    timeline = workload.get('timeline', '')
-                    if timeline:
-                        migration_timelines.append(timeline)
-            
-            # Display AI intelligence
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                st.markdown("##### 📊 Workload Intelligence")
-                if workload_types:
-                    fig_workload = px.pie(
-                        values=list(workload_types.values()),
-                        names=list(workload_types.keys()),
-                        title="Workload Type Distribution"
-                    )
-                    fig_workload.update_traces(textposition='inside', textinfo='percent+label')
-                    fig_workload.update_layout(height=300)
-                    st.plotly_chart(fig_workload, use_container_width=True)
-                
-                st.markdown("##### ⚡ Complexity Assessment")
-                if complexity_levels:
-                    for complexity, count in complexity_levels.items():
-                        percentage = (count / len(all_results)) * 100
-                        if complexity == "High":
-                            st.error(f"🔴 **{complexity}**: {count} databases ({percentage:.1f}%)")
-                        elif complexity == "Medium":
-                            st.warning(f"🟡 **{complexity}**: {count} databases ({percentage:.1f}%)")
-                        else:
-                            st.success(f"🟢 **{complexity}**: {count} databases ({percentage:.1f}%)")
-            
-            with col2:
-                st.markdown("##### 🎯 AI Recommendations")
-                if common_recommendations:
-                    from collections import Counter
-                    rec_counts = Counter(common_recommendations)
-                    
-                    st.markdown("**Most Frequent Recommendations:**")
-                    for rec, count in rec_counts.most_common(5):
-                        percentage = (count / len(all_results)) * 100
-                        st.write(f"• {rec}")
-                        st.caption(f"   Recommended for {count} databases ({percentage:.1f}%)")
-                
-                st.markdown("##### ⏱️ Migration Timeline Analysis")
-                if migration_timelines:
-                    unique_timelines = list(set(migration_timelines))
-                    st.write("**Estimated Migration Timelines:**")
-                    for timeline in unique_timelines:
-                        count = migration_timelines.count(timeline)
-                        percentage = (count / len(migration_timelines)) * 100
-                        st.write(f"• {timeline}: {count} databases ({percentage:.1f}%)")
+    # Cost visualizations
+    viz_cols = st.columns(2)
     
-    with analysis_tabs[2]:  # Cost Analysis
-        st.markdown("#### 💰 Comprehensive Cost Analysis")
+    with viz_cols[0]:
+        # Individual database costs
+        db_costs = [result['recommendations']['PROD']['monthly_cost'] for result in all_results]
+        db_names = [result['inputs'].get('db_name', f'DB{i+1}') for i, result in enumerate(all_results)]
         
-        col1, col2 = st.columns(2)
+        # Truncate long names for display
+        db_names_display = [name[:12] + "..." if len(name) > 12 else name for name in db_names]
         
-        with col1:
-            db_costs = [result['recommendations']['PROD']['monthly_cost'] for result in all_results]
-            db_names = [result['inputs'].get('db_name', f'DB{i+1}') for i, result in enumerate(all_results)]
-            db_names_short = [name[:12] + "..." if len(name) > 12 else name for name in db_names]
-            
-            fig1 = px.bar(
-                x=db_names_short,
-                y=db_costs,
-                title="Monthly Cost by Database",
-                labels={'x': 'Database', 'y': 'Monthly Cost ($)'},
-                text=[f'${cost:,.0f}' for cost in db_costs],
-                color=db_costs,
-                color_continuous_scale='RdYlBu_r'
-            )
-            fig1.update_traces(textposition='outside')
-            fig1.update_layout(xaxis_tickangle=-45, height=400, showlegend=False)
-            st.plotly_chart(fig1, use_container_width=True)
-        
-        with col2:
-            engine_costs = {}
-            for result in all_results:
-                engine = result['inputs'].get('engine', 'Unknown')
-                cost = result['recommendations']['PROD']['monthly_cost']
-                if engine in engine_costs:
-                    engine_costs[engine] += cost
-                else:
-                    engine_costs[engine] = cost
-            
-            fig2 = px.pie(
-                values=list(engine_costs.values()),
-                names=list(engine_costs.keys()),
-                title="Total Monthly Cost by Engine"
-            )
-            fig2.update_traces(textposition='inside', textinfo='percent+label')
-            fig2.update_layout(height=400)
-            st.plotly_chart(fig2, use_container_width=True)
-    
-    with analysis_tabs[3]:  # Individual Analysis
-        st.markdown("#### 🔍 Individual Database Deep Dive")
-        
-        db_names = [result['inputs'].get('db_name', f'Database {i+1}') for i, result in enumerate(all_results)]
-        selected_db_idx = st.selectbox(
-            "Select database for detailed analysis:",
-            options=list(range(len(all_results))),
-            format_func=lambda x: f"{db_names[x]} ({all_results[x]['inputs'].get('engine', 'Unknown')})"
+        fig1 = px.bar(
+            x=db_names_display,
+            y=db_costs,
+            title="Monthly Cost per Database",
+            labels={'x': 'Database', 'y': 'Monthly Cost ($)'},
+            color=db_costs,
+            color_continuous_scale='RdYlBu_r'
         )
-        
-        if selected_db_idx is not None:
-            selected_result = all_results[selected_db_idx]
-            st.markdown(f"### 📋 Analysis for {db_names[selected_db_idx]}")
-            display_single_database_analysis(selected_result, selected_db_idx + 1)
+        fig1.update_layout(
+            xaxis_tickangle=-45, 
+            height=400, 
+            showlegend=False,
+            title_font_size=16
+        )
+        st.plotly_chart(fig1, use_container_width=True)
     
-    with analysis_tabs[4]:  # Export Reports
-        st.markdown("#### 📄 Export & Download Options")
+    with viz_cols[1]:
+        # Cost by engine type
+        engine_costs = {}
+        for result in all_results:
+            engine = result['inputs'].get('engine', 'Unknown')
+            cost = result['recommendations']['PROD']['monthly_cost']
+            if engine in engine_costs:
+                engine_costs[engine] += cost
+            else:
+                engine_costs[engine] = cost
         
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown("##### 📊 Executive Report")
-            if st.button("📈 Generate Executive Summary", use_container_width=True):
-                try:
-                    excel_data = export_full_report(all_results)
-                    st.download_button(
-                        label="Download Executive Excel Report",
-                        data=excel_data,
-                        file_name=f"executive_migration_report_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True
-                    )
-                    st.success("✅ Executive report generated!")
-                except Exception as e:
-                    st.error(f"Export failed: {str(e)}")
-        
-        with col2:
-            st.markdown("##### 📋 Data Exports")
-            
-            csv_data = summary_df.to_csv(index=False)
-            st.download_button(
-                label="📄 Download Summary CSV",
-                data=csv_data,
-                file_name=f"migration_summary_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
-            
-            json_data = json.dumps(all_results, indent=2, default=str)
-            st.download_button(
-                label="🔧 Download Technical JSON",
-                data=json_data,
-                file_name=f"migration_technical_{datetime.now().strftime('%Y%m%d_%H%M')}.json",
-                mime="application/json",
-                use_container_width=True
-            )
-        
-        with col3:
-            st.markdown("##### 🎯 Quick Actions")
-            
-            if st.button("📧 Generate Email Summary", use_container_width=True):
-                email_summary = f"""
-Migration Analysis Summary - {datetime.now().strftime('%Y-%m-%d')}
+        fig2 = px.pie(
+            values=list(engine_costs.values()),
+            names=list(engine_costs.keys()),
+            title="Total Cost by Database Engine"
+        )
+        fig2.update_traces(textposition='inside', textinfo='percent+label')
+        fig2.update_layout(height=400, title_font_size=16)
+        st.plotly_chart(fig2, use_container_width=True)
+    
+    # Cost summary metrics
+    st.markdown("##### 📊 Financial Summary")
+    
+    total_monthly = sum(result['recommendations']['PROD']['monthly_cost'] for result in all_results)
+    total_onprem_estimate = sum(result['inputs']['cores'] * 200 for result in all_results)
+    total_savings = total_onprem_estimate - total_monthly
+    
+    financial_cols = st.columns(4)
+    
+    with financial_cols[0]:
+        st.metric("Total Portfolio Cost", f"${total_monthly:,.0f}/mo", f"${total_monthly * 12:,.0f}/year")
+    
+    with financial_cols[1]:
+        st.metric("Estimated On-Prem", f"${total_onprem_estimate:,.0f}/mo", f"${total_onprem_estimate * 12:,.0f}/year")
+    
+    with financial_cols[2]:
+        savings_pct = (total_savings / total_onprem_estimate * 100) if total_onprem_estimate > 0 else 0
+        st.metric("Monthly Savings", f"${total_savings:,.0f}", f"{savings_pct:.0f}%")
+    
+    with financial_cols[3]:
+        payback_months = (total_monthly * 0.1) / (total_savings / 12) if total_savings > 0 else 0
+        st.metric("ROI Payback", f"{payback_months:.0f} months" if payback_months > 0 else "Immediate")
 
-Executive Summary:
-• Total Databases Analyzed: {len(all_results)}
-• Total Monthly Cost: ${total_monthly:,.0f}
-• Total Annual Cost: ${total_annual:,.0f}
-• Average Cost per Database: ${avg_monthly:,.0f}/month
-
-Top Recommendations:
-• Proceed with cloud migration for cost optimization
-• Estimated annual savings vs on-premise: ${total_monthly * 12 * 0.3:,.0f}
-• Recommended timeline: 12-18 weeks for phased migration
-
-Next Steps:
-1. Review detailed analysis report
-2. Plan migration phases
-3. Engage AWS Professional Services if needed
-                """
-                
-                st.text_area("Email Summary (Copy & Paste):", email_summary, height=300)
+def render_bulk_individual_tab(all_results):
+    """Render individual database details from bulk analysis"""
+    st.markdown("#### 🔍 Individual Database Analysis")
+    
+    # Database selector
+    db_options = []
+    for i, result in enumerate(all_results):
+        db_name = result['inputs'].get('db_name', f'Database {i+1}')
+        engine = result['inputs'].get('engine', 'Unknown')
+        monthly_cost = result['recommendations']['PROD']['monthly_cost']
+        db_options.append(f"{db_name} ({engine}) - ${monthly_cost:,.0f}/mo")
+    
+    selected_idx = st.selectbox(
+        "Select database for detailed analysis:",
+        options=list(range(len(all_results))),
+        format_func=lambda x: db_options[x]
+    )
+    
+    if selected_idx is not None:
+        selected_result = all_results[selected_idx]
+        db_name = selected_result['inputs'].get('db_name', f'Database {selected_idx + 1}')
+        
+        st.markdown(f"### 📋 Detailed Analysis: {db_name}")
+        
+        # Display individual analysis using existing function
+        display_single_database_analysis(selected_result, selected_idx + 1)
 
 def display_single_database_analysis(result, db_number):
     """Display detailed analysis for a single database"""
@@ -1525,27 +2653,28 @@ def display_single_database_analysis(result, db_number):
     recommendations = result['recommendations']
     ai_insights = result.get('ai_insights', {})
     
-    detail_tabs = st.tabs(["📊 Configuration", "🏗️ Recommendations", "🤖 AI Analysis", "💰 Cost Breakdown"])
+    # Database info header
+    info_cols = st.columns(4)
     
-    with detail_tabs[0]:  # Configuration
-        st.markdown("##### 🖥️ Current Configuration")
-        
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric("Database Engine", inputs.get('engine', 'Unknown'))
-            st.metric("CPU Cores", inputs.get('cores', 'N/A'))
-            st.metric("CPU Utilization", f"{inputs.get('cpu_util', 0)}%")
-        with col2:
-            st.metric("AWS Region", inputs.get('region', 'Unknown'))
-            st.metric("RAM (GB)", inputs.get('ram', 'N/A'))
-            st.metric("RAM Utilization", f"{inputs.get('ram_util', 0)}%")
-        with col3:
-            st.metric("Storage (GB)", f"{inputs.get('storage', 0):,}")
-            st.metric("IOPS", f"{inputs.get('iops', 0):,}")
-            st.metric("Growth Rate", f"{inputs.get('growth', 0)}%")
+    with info_cols[0]:
+        st.metric("Database Engine", inputs.get('engine', 'Unknown').upper())
+    with info_cols[1]:
+        st.metric("AWS Region", inputs.get('region', 'Unknown'))
+    with info_cols[2]:
+        st.metric("Current Resources", f"{inputs.get('cores', 0)} cores, {inputs.get('ram', 0)} GB")
+    with info_cols[3]:
+        st.metric("Storage & IOPS", f"{inputs.get('storage', 0):,} GB, {inputs.get('iops', 0):,} IOPS")
     
-    with detail_tabs[1]:  # Recommendations
-        st.markdown("##### 🏗️ Environment Recommendations")
+    # Detailed tabs
+    detail_tabs = st.tabs([
+        "🏗️ Recommendations", 
+        "🤖 AI Analysis", 
+        "💰 Cost Breakdown", 
+        "📊 Configuration"
+    ])
+    
+    with detail_tabs[0]:  # Recommendations
+        st.markdown("##### Environment Recommendations")
         
         env_data = []
         for env, rec in recommendations.items():
@@ -1568,124 +2697,335 @@ def display_single_database_analysis(result, db_number):
             use_container_width=True,
             hide_index=True
         )
-        
-        prod_rec = recommendations['PROD']
-        st.info(f"🎯 **Production Recommendation:** {prod_rec['instance_type']} at ${prod_rec['monthly_cost']:,.0f}/month with {prod_rec.get('optimization_score', 85)}% optimization score")
     
-    with detail_tabs[2]:  # AI Analysis
-        if ai_insights:
-            st.markdown("##### 🤖 AI-Generated Insights")
+    with detail_tabs[1]:  # AI Analysis
+        if ai_insights and 'workload' in ai_insights and 'error' not in ai_insights['workload']:
+            workload = ai_insights['workload']
             
-            if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
-                workload = ai_insights['workload']
-                
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown(f"""
-                    <div class="ai-insight">
-                        <h6>🔍 Workload Classification</h6>
-                        <p><strong>Type:</strong> {workload.get('workload_type', 'Mixed')}</p>
-                        <p><strong>Complexity:</strong> {workload.get('complexity', 'Medium')}</p>
-                        <p><strong>Timeline:</strong> {workload.get('timeline', '12-16 weeks')}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                with col2:
-                    if workload.get('recommendations'):
-                        st.markdown("###### 🎯 AI Recommendations")
-                        for i, rec in enumerate(workload['recommendations'][:4], 1):
-                            st.write(f"{i}. {rec}")
+            ai_detail_cols = st.columns(3)
+            
+            with ai_detail_cols[0]:
+                st.markdown(f"""
+                **Workload Type:** {workload.get('workload_type', 'Mixed')}  
+                **Complexity:** {workload.get('complexity', 'Medium')}  
+                **Timeline:** {workload.get('timeline', '12-16 weeks')}
+                """)
+            
+            with ai_detail_cols[1]:
+                recommendations_ai = workload.get('recommendations', [])
+                if recommendations_ai:
+                    st.markdown("**Top Recommendations:**")
+                    for i, rec in enumerate(recommendations_ai[:3], 1):
+                        st.markdown(f"{i}. {rec}")
+            
+            with ai_detail_cols[2]:
+                risks = workload.get('risks', [])
+                if risks:
+                    st.markdown("**Key Risks:**")
+                    for risk in risks[:3]:
+                        st.markdown(f"⚠️ {risk}")
         else:
-            st.info("🔑 AI analysis requires Claude API key. Configure in sidebar to see detailed insights.")
+            st.info("🔑 AI analysis not available. Configure Claude API key for detailed insights.")
     
-    with detail_tabs[3]:  # Cost Breakdown
-        st.markdown("##### 💰 Detailed Cost Analysis")
-        
+    with detail_tabs[2]:  # Cost Breakdown
         prod_rec = recommendations['PROD']
         cost_breakdown = prod_rec.get('cost_breakdown', {})
         
         if cost_breakdown:
-            col1, col2 = st.columns(2)
+            breakdown_data = []
+            for component, cost in cost_breakdown.items():
+                if component != 'total':
+                    percentage = (cost / cost_breakdown.get('total', 1)) * 100
+                    breakdown_data.append({
+                        "Component": component.replace('_', ' ').title(),
+                        "Monthly Cost": cost,
+                        "Percentage": f"{percentage:.1f}%"
+                    })
             
-            with col1:
-                labels = list(cost_breakdown.keys())
-                values = list(cost_breakdown.values())
-                
-                fig = px.pie(
-                    values=values,
-                    names=labels,
-                    title="Monthly Cost Breakdown"
+            if breakdown_data:
+                breakdown_df = pd.DataFrame(breakdown_data)
+                st.dataframe(
+                    breakdown_df,
+                    column_config={
+                        "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.2f")
+                    },
+                    use_container_width=True,
+                    hide_index=True
                 )
-                fig.update_traces(textposition='inside', textinfo='percent+label')
-                fig.update_layout(height=300)
-                st.plotly_chart(fig, use_container_width=True)
+    
+    with detail_tabs[3]:  # Configuration
+        st.markdown("##### Current vs Recommended Configuration")
+        
+        config_comparison = pd.DataFrame({
+            "Metric": ["CPU Cores", "RAM (GB)", "Storage (GB)", "Peak CPU %", "Peak RAM %"],
+            "Current": [
+                inputs.get('cores', 0),
+                inputs.get('ram', 0),
+                inputs.get('storage', 0),
+                f"{inputs.get('cpu_util', 0)}%",
+                f"{inputs.get('ram_util', 0)}%"
+            ],
+            "Recommended (PROD)": [
+                recommendations['PROD']['vcpus'],
+                recommendations['PROD']['ram_gb'],
+                recommendations['PROD']['storage_gb'],
+                "N/A",
+                "N/A"
+            ]
+        })
+        
+        st.dataframe(config_comparison, use_container_width=True, hide_index=True)
+
+def render_bulk_export_tab(all_results):
+    """Render bulk export and reporting options"""
+    st.markdown("#### 📄 Export & Reporting Options")
+    
+    # Export summary
+    export_cols = st.columns(3)
+    
+    with export_cols[0]:
+        st.markdown("""
+        <div class="config-section">
+            <div class="config-header">📊 Executive Reports</div>
+            <p>Comprehensive analysis for stakeholders and decision makers.</p>
+            <ul>
+                <li>Executive summary with key metrics</li>
+                <li>Cost-benefit analysis</li>
+                <li>ROI calculations and projections</li>
+                <li>Risk assessment overview</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("📈 Generate Executive Report", use_container_width=True):
+            try:
+                excel_data = export_full_report(all_results)
+                st.download_button(
+                    label="📊 Download Executive Excel Report",
+                    data=excel_data,
+                    file_name=f"executive_migration_report_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+                st.success("✅ Executive report generated successfully!")
+            except Exception as e:
+                st.error(f"Export failed: {str(e)}")
+    
+    with export_cols[1]:
+        st.markdown("""
+        <div class="config-section">
+            <div class="config-header">📋 Data Exports</div>
+            <p>Raw data and detailed configurations for technical teams.</p>
+            <ul>
+                <li>Summary data in CSV format</li>
+                <li>Complete technical specifications</li>
+                <li>AI insights and recommendations</li>
+                <li>Cost breakdown details</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Create summary CSV
+        summary_data = []
+        for result in all_results:
+            prod_rec = result['recommendations']['PROD']
+            summary_data.append({
+                "Database": result['inputs'].get('db_name', 'N/A'),
+                "Engine": result['inputs'].get('engine', 'N/A'),
+                "Region": result['inputs'].get('region', 'N/A'),
+                "Instance_Type": prod_rec['instance_type'],
+                "vCPUs": prod_rec['vcpus'],
+                "RAM_GB": prod_rec['ram_gb'],
+                "Storage_GB": prod_rec['storage_gb'],
+                "Monthly_Cost": prod_rec['monthly_cost'],
+                "Annual_Cost": prod_rec['annual_cost'],
+                "Optimization_Score": prod_rec.get('optimization_score', 85)
+            })
+        
+        summary_df = pd.DataFrame(summary_data)
+        csv_data = summary_df.to_csv(index=False)
+        
+        st.download_button(
+            label="📄 Download Summary CSV",
+            data=csv_data,
+            file_name=f"migration_summary_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+            mime="text/csv",
+            use_container_width=True
+        )
+        
+        # Technical JSON export
+        json_data = json.dumps(all_results, indent=2, default=str)
+        st.download_button(
+            label="🔧 Download Technical JSON",
+            data=json_data,
+            file_name=f"migration_technical_{datetime.now().strftime('%Y%m%d_%H%M')}.json",
+            mime="application/json",
+            use_container_width=True
+        )
+    
+    with export_cols[2]:
+        st.markdown("""
+        <div class="config-section">
+            <div class="config-header">📧 Communication</div>
+            <p>Ready-to-use summaries for stakeholder communication.</p>
+            <ul>
+                <li>Email-ready executive summary</li>
+                <li>Key findings and recommendations</li>
+                <li>Next steps and action items</li>
+                <li>Cost savings highlights</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        if st.button("📧 Generate Email Summary", use_container_width=True):
+            total_monthly = sum(result['recommendations']['PROD']['monthly_cost'] for result in all_results)
+            total_annual = total_monthly * 12
+            total_onprem = sum(result['inputs']['cores'] * 200 for result in all_results)
+            total_savings = total_onprem - total_monthly
             
-            with col2:
-                cost_details = []
-                for component, cost in cost_breakdown.items():
-                    if component != 'total':
-                        percentage = (cost / cost_breakdown.get('total', 1)) * 100
-                        cost_details.append({
-                            "Component": component.replace('_', ' ').title(),
-                            "Monthly Cost": cost,
-                            "Percentage": f"{percentage:.1f}%"
-                        })
-                
-                if cost_details:
-                    cost_df = pd.DataFrame(cost_details)
-                    st.dataframe(
-                        cost_df,
-                        column_config={
-                            "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.2f")
-                        },
-                        use_container_width=True,
-                        hide_index=True
-                    )
+            email_summary = f"""
+Subject: Database Migration Analysis Results - ${total_monthly:,.0f}/month Cloud Cost
+
+Database Migration Analysis Summary
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M')}
+
+EXECUTIVE SUMMARY
+================
+• Total Databases Analyzed: {len(all_results)}
+• Recommended Monthly Cost: ${total_monthly:,.0f}
+• Estimated Annual Cost: ${total_annual:,.0f}
+• Projected Annual Savings: ${total_savings * 12:,.0f}
+• Average Cost per Database: ${total_monthly / len(all_results):,.0f}/month
+
+KEY FINDINGS
+============
+• Migration feasibility: HIGH ✅
+• Cost optimization potential: {(total_savings / total_onprem * 100):.0f}% savings vs on-premise
+• Recommended timeline: 12-18 weeks for phased migration
+• Risk level: LOW to MEDIUM (manageable with proper planning)
+
+TOP RECOMMENDATIONS
+==================
+1. Proceed with cloud migration planning
+2. Start with non-production environments
+3. Implement AWS Aurora for improved performance
+4. Use AWS DMS for seamless data migration
+5. Plan for 15-20% performance improvement post-migration
+
+NEXT STEPS
+==========
+1. Review detailed technical analysis
+2. Engage AWS Professional Services for migration planning
+3. Begin application dependency mapping
+4. Schedule stakeholder alignment meeting
+5. Establish migration project timeline
+
+For detailed analysis and technical specifications, please refer to the attached reports.
+
+Contact the migration team for questions or additional analysis.
+            """
+            
+            st.text_area("Email Summary (Copy & Paste):", email_summary, height=400)
 
 def generate_sample_report():
-    """Generate and download sample report"""
-    st.subheader("📊 Sample Report Generation")
+    """Generate and display sample report"""
+    st.markdown("#### 📊 Sample Migration Analysis Report")
     
     sample_data = {
         "analysis_date": datetime.now().strftime("%Y-%m-%d"),
+        "database_name": "SampleProductionDB",
         "database_engine": "PostgreSQL",
         "current_environment": "On-Premise",
-        "target_environment": "AWS RDS",
+        "target_environment": "AWS RDS PostgreSQL",
+        "current_specs": "16 cores, 64 GB RAM, 2TB storage",
+        "recommended_instance": "db.r5.2xlarge",
         "estimated_monthly_cost": 2850,
+        "estimated_annual_cost": 34200,
         "estimated_annual_savings": 45000,
         "migration_timeline": "12-16 weeks",
-        "risk_level": "Low to Medium"
+        "complexity_level": "Medium",
+        "risk_level": "Low to Medium",
+        "optimization_score": "87%"
     }
     
-    csv_data = pd.DataFrame([sample_data])
+    # Display sample report
+    st.markdown(f"""
+    <div class="ai-insight">
+        <h4>📋 Sample Migration Analysis Report</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; margin: 1rem 0;">
+            <div>
+                <h6>📊 Database Information</h6>
+                <p><strong>Name:</strong> {sample_data['database_name']}</p>
+                <p><strong>Engine:</strong> {sample_data['database_engine']}</p>
+                <p><strong>Current:</strong> {sample_data['current_environment']}</p>
+                <p><strong>Target:</strong> {sample_data['target_environment']}</p>
+            </div>
+            <div>
+                <h6>🎯 Recommendations</h6>
+                <p><strong>Instance:</strong> {sample_data['recommended_instance']}</p>
+                <p><strong>Monthly Cost:</strong> ${sample_data['estimated_monthly_cost']:,}</p>
+                <p><strong>Annual Savings:</strong> ${sample_data['estimated_annual_savings']:,}</p>
+                <p><strong>Optimization:</strong> {sample_data['optimization_score']}</p>
+            </div>
+            <div>
+                <h6>⏱️ Timeline & Risk</h6>
+                <p><strong>Timeline:</strong> {sample_data['migration_timeline']}</p>
+                <p><strong>Complexity:</strong> {sample_data['complexity_level']}</p>
+                <p><strong>Risk Level:</strong> {sample_data['risk_level']}</p>
+                <p><strong>Generated:</strong> {sample_data['analysis_date']}</p>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Download sample CSV
+    sample_df = pd.DataFrame([sample_data])
     csv_buffer = io.StringIO()
-    csv_data.to_csv(csv_buffer, index=False)
+    sample_df.to_csv(csv_buffer, index=False)
     
     st.download_button(
         label="📄 Download Sample CSV Report",
         data=csv_buffer.getvalue(),
         file_name=f"migration_analysis_sample_{datetime.now().strftime('%Y%m%d')}.csv",
-        mime="text/csv"
+        mime="text/csv",
+        use_container_width=True
     )
     
-    st.info("💡 This is a sample report. Run the full analysis with your Claude API key to generate comprehensive reports with AI insights.")
+    st.info("💡 This is a sample report demonstrating the output format. Run the full analysis with your Claude API key to generate comprehensive reports with AI insights.")
 
 def render_footer():
-    """Render application footer"""
+    """Render enhanced application footer"""
     st.markdown("---")
     st.markdown("""
     <div class="footer-content">
         <h3>🚀 AI Database Migration Studio</h3>
-        <p><strong>Powered by AI • Enterprise-Ready • Cloud-Native</strong></p>
-        <div style="display: flex; justify-content: center; gap: 2rem; margin-top: 1rem; flex-wrap: wrap;">
-            <div>✅ Multi-Engine Support</div>
-            <div>🤖 AI-Powered Analysis</div>
-            <div>📊 Cost Optimization</div>
-            <div>🔒 Enterprise Security</div>
-        </div>
-        <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
-            Transform your database migration with the power of artificial intelligence
+        <p style="font-size: 1.1rem; font-weight: 600; color: #667eea; margin: 1rem 0;">
+            Powered by Claude AI • Enterprise-Ready • Cloud-Native
         </p>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <strong>✅ Multi-Engine Support</strong><br>
+                <small>Oracle, PostgreSQL, SQL Server, MySQL</small>
+            </div>
+            <div class="feature-item">
+                <strong>🤖 AI-Powered Analysis</strong><br>
+                <small>Intelligent workload assessment</small>
+            </div>
+            <div class="feature-item">
+                <strong>📊 Cost Optimization</strong><br>
+                <small>Right-sizing and savings analysis</small>
+            </div>
+            <div class="feature-item">
+                <strong>🔒 Enterprise Security</strong><br>
+                <small>AWS best practices compliance</small>
+            </div>
+        </div>
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <p style="font-size: 0.9rem; color: #64748b; margin: 0;">
+                Transform your database migration journey with the power of artificial intelligence.<br>
+                Built for enterprise teams seeking intelligent, cost-effective cloud migration solutions.
+            </p>
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
