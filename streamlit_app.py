@@ -728,74 +728,117 @@ def main():
         'data_transfer_gb': data_transfer_gb
     }
     
-    # File import section
-    st.subheader("📁 Import Database Configurations")
-    uploaded_file = st.file_uploader(
-        "Upload CSV/Excel file with database configurations", 
-        type=["csv", "xlsx"],
-        help="Upload a file containing multiple database configurations"
-    )
+    # Create tabs for different input methods
+    tab1, tab2 = st.tabs(["📁 File Upload", "🧪 Manual Input"])
     
-    if uploaded_file:
-        try:
-            # Show file info for debugging
-            st.info(f"📄 Processing file: {uploaded_file.name} ({uploaded_file.size} bytes)")
+    with tab1:
+        st.markdown("### Upload Multiple Database Configurations")
+        uploaded_file = st.file_uploader(
+            "Upload CSV/Excel file with database configurations", 
+            type=["csv", "xlsx"],
+            help="Upload a file containing multiple database configurations"
+        )
+        
+        if uploaded_file:
+            try:
+                # Show file info for debugging
+                st.info(f"📄 Processing file: {uploaded_file.name} ({uploaded_file.size} bytes)")
+                
+                valid_inputs, errors = parse_uploaded_file(uploaded_file)
+                
+                # Show detailed results
+                if errors:
+                    st.error(f"❌ **Found {len(errors)} validation errors:**")
+                    with st.expander("View Error Details", expanded=False):
+                        for i, error in enumerate(errors, 1):
+                            st.error(f"{i}. {error}")
+                
+                if valid_inputs:
+                    st.success(f"✅ Successfully parsed **{len(valid_inputs)}** valid database configurations")
+                    st.session_state.file_inputs = valid_inputs
+                    
+                    # Show detailed summary of parsed databases
+                    st.markdown("#### 📋 Parsed Database Summary")
+                    summary_data = []
+                    for i, db in enumerate(valid_inputs, 1):
+                        summary_data.append({
+                            "#": i,
+                            "Database Name": db.get('db_name', f'Database {i}'),
+                            "Engine": db.get('engine', 'Unknown'),
+                            "Region": db.get('region', 'Unknown'),
+                            "CPU Cores": db.get('cores', 'N/A'),
+                            "RAM (GB)": db.get('ram', 'N/A'),
+                            "Storage (GB)": db.get('storage', 'N/A')
+                        })
+                    
+                    summary_df = pd.DataFrame(summary_data)
+                    st.dataframe(summary_df, use_container_width=True, hide_index=True)
+                    
+                    # Analysis options
+                    st.markdown("#### 🎯 Analysis Configuration")
+                    col1, col2 = st.columns(2)
+                    with col1:
+                        st.markdown("**Selected AI Features:**")
+                        st.write(f"• AI Workload Analysis: {'✅ Enabled' if enable_ai_analysis else '❌ Disabled'}")
+                        st.write(f"• Future Predictions: {'✅ Enabled' if enable_predictions else '❌ Disabled'}")
+                        st.write(f"• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}")
+                    
+                    with col2:
+                        st.markdown("**Ready to Analyze:**")
+                        if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
+                            if not api_key:
+                                st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
+                            else:
+                                analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+                else:
+                    st.error("❌ No valid database configurations found. Please check your file format and data.")
+                    
+            except Exception as e:
+                st.error(f"❌ **Error processing file:** {str(e)}")
+                st.info("💡 Make sure your CSV file has all required columns and proper formatting.")
+    
+    with tab2:
+        st.markdown("### Single Database Analysis")
+        
+        # Show current configuration summary
+        st.markdown("#### 📊 Current Configuration")
+        config_col1, config_col2, config_col3 = st.columns(3)
+        
+        with config_col1:
+            st.metric("Database Engine", engine)
+            st.metric("CPU Cores", cores)
+            st.metric("RAM (GB)", ram)
+        
+        with config_col2:
+            st.metric("AWS Region", region)
+            st.metric("CPU Utilization", f"{cpu_util}%")
+            st.metric("RAM Utilization", f"{ram_util}%")
+        
+        with config_col3:
+            st.metric("Storage (GB)", f"{storage:,}")
+            st.metric("IOPS", f"{iops:,}")
+            st.metric("Growth Rate", f"{growth_rate}%")
+        
+        # Analysis options
+        st.markdown("#### 🎯 Analysis Options")
+        analysis_col1, analysis_col2 = st.columns(2)
+        
+        with analysis_col1:
+            st.markdown("**Selected AI Features:**")
+            st.write(f"• AI Workload Analysis: {'✅ Enabled' if enable_ai_analysis else '❌ Disabled'}")
+            st.write(f"• Future Predictions: {'✅ Enabled' if enable_predictions else '❌ Disabled'}")
+            st.write(f"• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}")
+        
+        with analysis_col2:
+            st.markdown("**Actions:**")
+            if st.button("🚀 Generate AI-Powered Analysis", type="primary", use_container_width=True):
+                if not api_key:
+                    st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
+                else:
+                    analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
             
-            valid_inputs, errors = parse_uploaded_file(uploaded_file)
-            
-            # Show detailed results
-            if errors:
-                st.error(f"❌ **Found {len(errors)} validation errors:**")
-                for i, error in enumerate(errors, 1):
-                    st.error(f"{i}. {error}")
-            
-            if valid_inputs:
-                st.success(f"✅ Successfully parsed **{len(valid_inputs)}** valid database configurations out of total rows")
-                st.session_state.file_inputs = valid_inputs
-                
-                # Show summary of what was parsed
-                if len(valid_inputs) > 0:
-                    sample = valid_inputs[0]
-                    st.info(f"📋 **Sample parsed data:** {sample.get('db_name', 'Unknown')} - {sample.get('engine', 'Unknown')} in {sample.get('region', 'Unknown')}")
-            else:
-                st.error("❌ No valid database configurations found. Please check your file format and data.")
-                
-                # Show preview in a separate section
-                st.markdown("#### 👁️ Preview Imported Data")
-                preview_df = pd.DataFrame(valid_inputs)
-                st.dataframe(preview_df.head(), use_container_width=True)
-                
-                # Analysis options
-                col1, col2 = st.columns(2)
-                with col1:
-                    st.markdown("**Analysis Options:**")
-                    st.write(f"• AI Workload Analysis: {'✅' if enable_ai_analysis else '❌'}")
-                    st.write(f"• Future Predictions: {'✅' if enable_predictions else '❌'}")
-                    st.write(f"• Migration Strategy: {'✅' if enable_migration_strategy else '❌'}")
-                
-                with col2:
-                    if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
-                        if not api_key:
-                            st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
-                        else:
-                            analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
-        except Exception as e:
-            st.error(f"❌ **Error processing file:** {str(e)}")
-            st.info("💡 Make sure your CSV file has all required columns and proper formatting.")
-    
-    # Main content area
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        if st.button("🚀 Generate AI-Powered Analysis", type="primary", use_container_width=True):
-            if not api_key:
-                st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
-            else:
-                analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
-    
-    with col2:
-        if st.button("📊 Export Sample Report", use_container_width=True):
-            generate_sample_report()
+            if st.button("📊 Export Sample Report", use_container_width=True):
+                generate_sample_report()
 
 def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy):
     """Analyze multiple databases from uploaded file"""
