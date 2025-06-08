@@ -11,6 +11,10 @@ import numpy as np
 from datetime import datetime
 import io
 import os
+import os
+import streamlit as st
+from streamlit_oauth import OAuth2Component # Ensure this is OAuth2Component if that's the class name
+
 
 # Import reportlab components for PDF generation with error handling
 try:
@@ -23,14 +27,13 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 #--- NEW: Google Authentication Setup ---
-from streamlit_oauth import OAuth2
-
 # IMPORTANT: Replace these with your actual Google Client ID and Client Secret
 # and your application's Redirect URI.
 # It is highly recommended to use environment variables for production.
 # For local testing, you can uncomment and fill them directly, but REMOVE for production.
-GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_ID") # REPLACE THIS
-GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET","GOOGLE_CLIENT_SECRET") # REPLACE THIS
+CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", st.secrets.get("GOOGLE_CLIENT_ID"))
+CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", st.secrets.get("GOOGLE_CLIENT_SECRET"))
+REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", st.secrets.get("GOOGLE_REDIRECT_URI"))
 
 # The redirect URI should match what you configured in Google Cloud Console
 # For local development: http://localhost:8501
@@ -40,16 +43,19 @@ GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "https://airdas.stre
 if GOOGLE_CLIENT_ID == "GOOGLE_CLIENT_ID" or GOOGLE_CLIENT_SECRET == "GOOGLE_CLIENT_SECRET":
     st.error("Google Client ID or Client Secret not set. Please follow the setup instructions.")
     st.stop() # Stop the app if credentials are not configured
+if not CLIENT_ID or not CLIENT_SECRET or not REDIRECT_URI:
+    st.error("Google Client ID, Client Secret, or Redirect URI not set. Please follow the instructions to configure them.")
+    st.stop() # Stop the app if credentials are not configured
 
-oauth2 = OAuth2(
-    client_id=GOOGLE_CLIENT_ID,
-    client_secret=GOOGLE_CLIENT_SECRET,
-    redirect_uri=GOOGLE_REDIRECT_URI,
-    authorize_url="https://accounts.google.com/o/oauth2/auth",
-    token_url="https://oauth2.googleapis.com/token",
-    scope=["openid", "email", "profile"], # Required scopes for Google
-    allow_non_secure_http=True if "localhost" in GOOGLE_REDIRECT_URI else False # Set to False in production for HTTPS
-)
+#oauth2 = OAuth2(
+#    client_id=GOOGLE_CLIENT_ID,
+#    client_secret=GOOGLE_CLIENT_SECRET,
+#    redirect_uri=GOOGLE_REDIRECT_URI,
+#    authorize_url="https://accounts.google.com/o/oauth2/auth",
+#    token_url="https://oauth2.googleapis.com/token",
+#    scope=["openid", "email", "profile"], # Required scopes for Google
+#    allow_non_secure_http=True if "localhost" in GOOGLE_REDIRECT_URI else False # Set to False in production for HTTPS
+#)
 
 # --- END NEW: Google Authentication Setup ---
 # Configure enterprise-grade UI
