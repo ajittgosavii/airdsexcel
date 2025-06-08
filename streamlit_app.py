@@ -11,10 +11,8 @@ import numpy as np
 from datetime import datetime
 import io
 import os
-import os
-import streamlit as st
-from streamlit_oauth import OAuth2Component # Ensure this is OAuth2Component if that's the class name
-
+import requests
+from streamlit_oauth import OAuth2Component
 
 # Import reportlab components for PDF generation with error handling
 try:
@@ -26,27 +24,52 @@ try:
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
+
 # #--- Google Authentication Setup ---
-CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", st.secrets.get("GOOGLE_CLIENT_ID"))
-CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", st.secrets.get("GOOGLE_CLIENT_SECRET"))
-REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", st.secrets.get("GOOGLE_REDIRECT_URI"))
+CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", st.secrets.get("GOOGLE_CLIENT_ID", None) if hasattr(st, 'secrets') else None)
+CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", st.secrets.get("GOOGLE_CLIENT_SECRET", None) if hasattr(st, 'secrets') else None)
+REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", st.secrets.get("GOOGLE_REDIRECT_URI", None) if hasattr(st, 'secrets') else None)
 
 # Define Google's OAuth 2.0 endpoints
 AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 
+# Check if credentials are configured
 if not CLIENT_ID or not CLIENT_SECRET or not REDIRECT_URI:
-    st.error("Google Client ID, Client Secret, or Redirect URI not set. Please follow the instructions to configure them.")
+    # Show a more helpful error message
+    st.error("🔐 **Google OAuth Configuration Missing**")
+    st.markdown("""
+    **To configure Google OAuth:**
+    
+    1. **Create a Google Cloud Project** at https://console.cloud.google.com
+    2. **Enable Google+ API** in the APIs & Services section
+    3. **Create OAuth 2.0 credentials** in the Credentials section
+    4. **Add your redirect URI** (e.g., `https://your-app.streamlit.app/component/streamlit_oauth.authorize_button/index.html`)
+    5. **Set the following secrets/environment variables:**
+    
+    ```
+    GOOGLE_CLIENT_ID=your_client_id_here
+    GOOGLE_CLIENT_SECRET=your_client_secret_here
+    GOOGLE_REDIRECT_URI=your_redirect_uri_here
+    ```
+    
+    📖 **For detailed setup instructions:** https://docs.streamlit.io/knowledge-base/tutorials/databases/streamlit-oauth
+    """)
     st.stop() # Stop the app if credentials are not configured
 
 # Initialize the OAuth2 component
-oauth2 = OAuth2Component(
-    client_id=CLIENT_ID,
-    client_secret=CLIENT_SECRET,
-    authorize_endpoint=AUTHORIZE_URL,
-    token_endpoint=TOKEN_URL,
-)
+try:
+    oauth2 = OAuth2Component(
+        client_id=CLIENT_ID,
+        client_secret=CLIENT_SECRET,
+        authorize_endpoint=AUTHORIZE_URL,
+        token_endpoint=TOKEN_URL,
+    )
+except Exception as e:
+    st.error(f"Failed to initialize OAuth2 component: {str(e)}")
+    st.stop()
 # --- END NEW: Google Authentication Setup ---
+
 # Configure enterprise-grade UI
 st.set_page_config(
     page_title="AI Database Migration Studio",
@@ -1468,11 +1491,18 @@ def initialize_session_state():
 
 def main():
     """Main application function"""
-    st.title("🤖 AI Database Migration Studio")
-
-    # --- Diagnostic: Check session state ---
-    st.write("Current session state:", st.session_state)
-
+    # Initialize session state
+    initialize_session_state()
+    
+    # Optional: Add debug info for OAuth troubleshooting
+    if st.query_params.get("debug") == "true":
+        st.write("**🔧 Debug Info:**")
+        st.write(f"- CLIENT_ID configured: {'✅' if CLIENT_ID else '❌'}")
+        st.write(f"- CLIENT_SECRET configured: {'✅' if CLIENT_SECRET else '❌'}")
+        st.write(f"- REDIRECT_URI: {REDIRECT_URI}")
+        st.write(f"- Query params: {dict(st.query_params)}")
+        st.write("---")
+    
     # --- Google Authentication Integration ---
     if 'user_info' not in st.session_state:
         st.info("Please log in with your Google account to access the AI Database Migration Studio.")
@@ -1481,43 +1511,53 @@ def main():
         # For local development, this should typically be: http://localhost:8501/component/streamlit_oauth.authorize_button/index.html
         # For Streamlit Community Cloud, it should be: https://<your-app-name>.streamlit.app/component/streamlit_oauth.authorize_button/index.html
         # Ensure the REDIRECT_URI in your secrets/environment variable exactly matches this.
-        result = oauth2.authorize_button(
-            name="Continue with Google",
-            icon="https://www.google.com/favicon.ico",
-            redirect_uri=REDIRECT_URI, # This must exactly match the one configured in Google Cloud Console
-            scope="openid email profile",
-            key="google_oauth_button"
-        )
+        try:
+            result = oauth2.authorize_button(
+                name="Continue with Google",
+                icon="https://www.google.com/favicon.ico",
+                redirect_uri=REDIRECT_URI, # This must exactly match the one configured in Google Cloud Console
+                scope="openid email profile",
+                key="google_oauth_button"
+            )
 
-        if result and 'token' in result:
-            token = result['token']
-            try:
-                # Get user info from Google
-                user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
-                headers = {"Authorization": f"Bearer {token['access_token']}"}
-                user_info_response = requests.get(user_info_url, headers=headers)
-                user_info_response.raise_for_status() # Raise an exception for HTTP errors
-                user_info = user_info_response.json()
-                st.session_state.user_info = user_info
-                st.session_state.token = token
-                st.experimental_rerun()
-            except requests.exceptions.RequestException as e:
-                st.error(f"Error fetching user info: {e}")
-                st.session_state.clear()
-                st.stop()
-            except Exception as e:
-                st.error(f"An unexpected error occurred during login: {e}")
-                st.session_state.clear()
-                st.stop()
-        else:
-            st.stop() # Stop the app until logged in
+            if result and 'token' in result:
+                token = result['token']
+                try:
+                    # Get user info from Google
+                    user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
+                    headers = {"Authorization": f"Bearer {token['access_token']}"}
+                    user_info_response = requests.get(user_info_url, headers=headers)
+                    user_info_response.raise_for_status() # Raise an exception for HTTP errors
+                    user_info = user_info_response.json()
+                    st.session_state.user_info = user_info
+                    st.session_state.token = token
+                    st.rerun()
+                except requests.exceptions.RequestException as e:
+                    st.error(f"Error fetching user info: {e}")
+                    st.session_state.clear()
+                    st.stop()
+                except Exception as e:
+                    st.error(f"An unexpected error occurred during login: {e}")
+                    st.session_state.clear()
+                    st.stop()
+            else:
+                st.stop() # Stop the app until logged in
+        except Exception as e:
+            st.error(f"OAuth initialization failed: {str(e)}")
+            st.info("💡 **Troubleshooting tips:**")
+            st.info("1. Check that your Google OAuth credentials are properly configured")
+            st.info("2. Verify the redirect URI matches exactly in Google Cloud Console")
+            st.info("3. Make sure the OAuth consent screen is configured")
+            st.stop()
 
+    # User is authenticated, show the app
     user_info = st.session_state.user_info
     st.sidebar.write(f"Logged in as: **{user_info.get('email', 'N/A')}**")
     if st.sidebar.button("Logout"):
         st.session_state.clear()
-        st.experimental_rerun()
+        st.rerun()
     # --- END Google Authentication Integration ---
+    
     # Header
     st.markdown("""
     <div class="main-header">
