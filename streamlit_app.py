@@ -26,7 +26,6 @@ try:
     REPORTLAB_AVAILABLE = True
 except ImportError:
     REPORTLAB_AVAILABLE = False
-#--- NEW: Google Authentication Setup ---
 # IMPORTANT: Replace these with your actual Google Client ID and Client Secret
 # and your application's Redirect URI.
 # It is highly recommended to use environment variables for production.
@@ -49,12 +48,12 @@ if not CLIENT_ID or not CLIENT_SECRET or not REDIRECT_URI:
     st.error("Google Client ID, Client Secret, or Redirect URI not set. Please follow the instructions to configure them.")
     st.stop() # Stop the app if credentials are not configured
 # Initialize the OAuth2 component
-oauth2 = OAuth2(
+oauth2 = OAuth2Component( # This line was changed from OAuth2 to OAuth2Component
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET,
     #redirect_uri=GOOGLE_REDIRECT_URI,
-    authorize_endpoint="AUTHORIZE_URL",
-    token_endpoint="TOKEN_URL",
+    authorize_endpoint=AUTHORIZE_URL,
+    token_endpoint=TOKEN_URL,
     #scope=["openid", "email", "profile"], # Required scopes for Google
     #allow_non_secure_http=True if "localhost" in GOOGLE_REDIRECT_URI else False # Set to False in production for HTTPS
 )
