@@ -11,12 +11,16 @@ import numpy as np
 from datetime import datetime
 import io
 
-# Import reportlab components for PDF generation
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from reportlab.lib.units import inch
-from reportlab.lib import colors
+# Import reportlab components for PDF generation with error handling
+try:
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import inch
+    from reportlab.lib import colors
+    REPORTLAB_AVAILABLE = True
+except ImportError:
+    REPORTLAB_AVAILABLE = False
 
 # Configure enterprise-grade UI
 st.set_page_config(
@@ -1015,6 +1019,169 @@ class EnhancedRDSCalculator:
         
         return int(avg_efficiency * 100)
 
+class PDFReportGenerator:
+    """Generates PDF reports from analysis results with enhanced error handling."""
+
+    def __init__(self):
+        if not REPORTLAB_AVAILABLE:
+            raise ImportError("ReportLab library not found. Please install with: pip install reportlab")
+        
+        try:
+            # Initialize styles
+            self.styles = getSampleStyleSheet()
+            self.styles.add(ParagraphStyle(name='H1_Custom', fontSize=24, leading=28, alignment=1, spaceAfter=20, fontName='Helvetica-Bold'))
+            self.styles.add(ParagraphStyle(name='H2_Custom', fontSize=18, leading=22, spaceBefore=10, spaceAfter=10, fontName='Helvetica-Bold'))
+            self.styles.add(ParagraphStyle(name='H3_Custom', fontSize=14, leading=18, spaceBefore=8, spaceAfter=8, fontName='Helvetica-Bold'))
+            self.styles.add(ParagraphStyle(name='Normal_Custom', fontSize=10, leading=12, spaceAfter=6))
+            self.styles.add(ParagraphStyle(name='Bullet_Custom', fontSize=10, leading=12, leftIndent=20, spaceAfter=6, bulletText='•'))
+            
+        except Exception as e:
+            raise Exception(f"Failed to initialize PDF generator: {str(e)}") from e
+
+    def generate_report(self, all_results: list | dict):
+        """Generates a PDF report based on the analysis results."""
+        try:
+            buffer = io.BytesIO()
+            doc = SimpleDocTemplate(buffer, pagesize=letter)
+            story = []
+
+            story.append(Paragraph("AI Database Migration Studio Report", self.styles['H1_Custom']))
+            story.append(Paragraph(f"Generated On: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", self.styles['Normal_Custom']))
+            story.append(Spacer(1, 0.2 * inch))
+
+            if not all_results:
+                story.append(Paragraph("No analysis results available to generate a report.", self.styles['Normal_Custom']))
+                doc.build(story)
+                buffer.seek(0)
+                return buffer.getvalue()
+
+            # Handle both single and bulk analysis results
+            if isinstance(all_results, dict):
+                # Convert single result to a list for consistent processing
+                all_results = [all_results]
+
+            # Executive Summary (aggregated for bulk, or single for individual)
+            story.append(Paragraph("1. Executive Summary", self.styles['H2_Custom']))
+            
+            summary_data = [["Database", "Engine", "Instance Type", "Monthly Cost ($)", "Optimization"]]
+            total_monthly_cost = 0
+            total_databases = len(all_results)
+            
+            for result in all_results:
+                inputs = result.get('inputs', {})
+                prod_rec = result['recommendations']['PROD']
+                db_name = inputs.get('db_name', 'N/A')
+                engine = inputs.get('engine', 'N/A')
+                instance_type = prod_rec['instance_type']
+                monthly_cost = f"{prod_rec['monthly_cost']:,.0f}"
+                optimization = f"{prod_rec.get('optimization_score', 85)}%"
+                
+                summary_data.append([db_name, engine, instance_type, monthly_cost, optimization])
+                total_monthly_cost += prod_rec['monthly_cost']
+
+            table = Table(summary_data, colWidths=[1.5*inch, 1*inch, 1.5*inch, 1.2*inch, 1*inch])
+            table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8fafc')),
+                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+                ('LEFTPADDING', (0,0), (-1,-1), 6),
+                ('RIGHTPADDING', (0,0), (-1,-1), 6),
+                ('TOPPADDING', (0,0), (-1,-1), 6),
+                ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+            ]))
+            story.append(table)
+            story.append(Spacer(1, 0.2 * inch))
+
+            story.append(Paragraph(f"Total Monthly Cost (Production): ${total_monthly_cost:,.0f}", self.styles['Normal_Custom']))
+            story.append(Paragraph(f"Total Annual Cost (Production): ${total_monthly_cost * 12:,.0f}", self.styles['Normal_Custom']))
+            story.append(Spacer(1, 0.2 * inch))
+
+            # Detailed Analysis for Each Database
+            for i, result in enumerate(all_results):
+                inputs = result.get('inputs', {})
+                recommendations = result.get('recommendations', {})
+                ai_insights = result.get('ai_insights', {})
+                db_name = inputs.get('db_name', f'Database {i+1}')
+
+                story.append(Paragraph(f"2. Detailed Analysis: {db_name}", self.styles['H2_Custom']))
+                story.append(Paragraph("2.1. Current Configuration", self.styles['H3_Custom']))
+                story.append(Paragraph(f"• Engine: {inputs.get('engine', 'N/A').upper()}", self.styles['Bullet_Custom']))
+                story.append(Paragraph(f"• Region: {inputs.get('region', 'N/A')}", self.styles['Bullet_Custom']))
+                story.append(Paragraph(f"• CPU: {inputs.get('cores', 'N/A')} cores ({inputs.get('cpu_util', 'N/A')}% util)", self.styles['Bullet_Custom']))
+                story.append(Paragraph(f"• RAM: {inputs.get('ram', 'N/A')} GB ({inputs.get('ram_util', 'N/A')}% util)", self.styles['Bullet_Custom']))
+                story.append(Paragraph(f"• Storage: {inputs.get('storage', 'N/A'):,} GB ({inputs.get('iops', 'N/A'):,} IOPS)", self.styles['Bullet_Custom']))
+                story.append(Spacer(1, 0.1 * inch))
+
+                story.append(Paragraph("2.2. Recommended Configurations", self.styles['H3_Custom']))
+                rec_table_data = [["Environment", "Instance Type", "vCPUs", "RAM (GB)", "Monthly Cost ($)"]]
+                for env, rec in recommendations.items():
+                    rec_table_data.append([
+                        env, 
+                        rec['instance_type'], 
+                        rec['vcpus'], 
+                        rec['ram_gb'], 
+                        f"{rec['monthly_cost']:,.0f}"
+                    ])
+                
+                rec_table = Table(rec_table_data, colWidths=[1.2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 1.2*inch])
+                rec_table.setStyle(TableStyle([
+                    ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#764ba2')),
+                    ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                    ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                    ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+                    ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8fafc')),
+                    ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
+                    ('LEFTPADDING', (0,0), (-1,-1), 6),
+                    ('RIGHTPADDING', (0,0), (-1,-1), 6),
+                    ('TOPPADDING', (0,0), (-1,-1), 6),
+                    ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+                ]))
+                story.append(rec_table)
+                story.append(Spacer(1, 0.2 * inch))
+
+                if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
+                    workload = ai_insights['workload']
+                    story.append(Paragraph("2.3. AI Workload Insights", self.styles['H3_Custom']))
+                    story.append(Paragraph(f"• Workload Type: {workload.get('workload_type', 'N/A')}", self.styles['Bullet_Custom']))
+                    story.append(Paragraph(f"• Migration Complexity: {workload.get('complexity', 'N/A')}", self.styles['Bullet_Custom']))
+                    story.append(Paragraph(f"• Estimated Timeline: {workload.get('timeline', 'N/A')}", self.styles['Bullet_Custom']))
+                    
+                    if workload.get('recommendations'):
+                        story.append(Paragraph("Key Recommendations:", self.styles['Normal_Custom']))
+                        for rec in workload['recommendations']:
+                            story.append(Paragraph(f"• {rec}", self.styles['Bullet_Custom']))
+                    if workload.get('risks'):
+                        story.append(Paragraph("Identified Risks:", self.styles['Normal_Custom']))
+                        for risk in workload['risks']:
+                            story.append(Paragraph(f"• {risk}", self.styles['Bullet_Custom']))
+                    story.append(Spacer(1, 0.2 * inch))
+
+                if 'migration' in ai_insights and 'error' not in ai_insights['migration']:
+                    migration = ai_insights['migration']
+                    story.append(Paragraph("2.4. Migration Strategy Overview", self.styles['H3_Custom']))
+                    story.append(Paragraph(f"• Estimated Timeline: {migration.get('timeline', 'N/A')}", self.styles['Bullet_Custom']))
+                    if migration.get('phases'):
+                        story.append(Paragraph("Migration Phases:", self.styles['Normal_Custom']))
+                        for phase in migration['phases']:
+                            story.append(Paragraph(f"• {phase}", self.styles['Bullet_Custom']))
+                    if migration.get('tools'):
+                        story.append(Paragraph("Recommended Tools:", self.styles['Normal_Custom']))
+                        for tool in migration['tools']:
+                            story.append(Paragraph(f"• {tool}", self.styles['Bullet_Custom']))
+                    story.append(Spacer(1, 0.2 * inch))
+
+            doc.build(story)
+            buffer.seek(0)
+            return buffer.getvalue()
+            
+        except Exception as e:
+            raise Exception(f"PDF generation failed: {str(e)}") from e
+
 def parse_uploaded_file(uploaded_file):
     """Parse uploaded CSV/Excel file with database configurations"""
     try:
@@ -1129,171 +1296,150 @@ def export_full_report(all_results):
     except Exception as e:
         raise Exception(f"Report generation failed: {str(e)}")
 
-class PDFReportGenerator:
-    """Generates PDF reports from analysis results."""
+def check_pdf_requirements():
+    """Check if PDF generation requirements are met"""
+    if REPORTLAB_AVAILABLE:
+        return True, "PDF generation is ready"
+    else:
+        return False, "ReportLab library not installed. Run: pip install reportlab"
 
-    def __init__(self):
-        self.styles = getSampleStyleSheet()
-        self.styles.add(ParagraphStyle(name='H1_Custom', fontSize=24, leading=28, alignment=1, spaceAfter=20, fontName='Helvetica-Bold'))
-        self.styles.add(ParagraphStyle(name='H2_Custom', fontSize=18, leading=22, spaceBefore=10, spaceAfter=10, fontName='Helvetica-Bold'))
-        self.styles.add(ParagraphStyle(name='H3_Custom', fontSize=14, leading=18, spaceBefore=8, spaceAfter=8, fontName='Helvetica-Bold'))
-        self.styles.add(ParagraphStyle(name='Normal_Custom', fontSize=10, leading=12, spaceAfter=6))
-        self.styles.add(ParagraphStyle(name='Bullet_Custom', fontSize=10, leading=12, leftIndent=20, spaceAfter=6, bulletText='•'))
-
-    def generate_report(self, all_results: list | dict):
-        """Generates a PDF report based on the analysis results."""
-        buffer = io.BytesIO()
-        doc = SimpleDocTemplate(buffer, pagesize=letter)
-        story = []
-
-        story.append(Paragraph("AI Database Migration Studio Report", self.styles['H1_Custom']))
-        story.append(Paragraph(f"Generated On: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", self.styles['Normal_Custom']))
-        story.append(Spacer(1, 0.2 * inch))
-
-        if not all_results:
-            story.append(Paragraph("No analysis results available to generate a report.", self.styles['Normal_Custom']))
-            doc.build(story)
-            buffer.seek(0)
-            return buffer.getvalue()
-
-        # Handle both single and bulk analysis results
-        if isinstance(all_results, dict):
-            # Convert single result to a list for consistent processing
-            all_results = [all_results]
-
-        # Executive Summary (aggregated for bulk, or single for individual)
-        story.append(Paragraph("1. Executive Summary", self.styles['H2_Custom']))
-        
-        summary_data = [["Database", "Engine", "Instance Type", "Monthly Cost ($)", "Optimization"]]
-        total_monthly_cost = 0
-        total_databases = len(all_results)
-        
-        for result in all_results:
-            inputs = result.get('inputs', {})
-            prod_rec = result['recommendations']['PROD']
-            db_name = inputs.get('db_name', 'N/A')
-            engine = inputs.get('engine', 'N/A')
-            instance_type = prod_rec['instance_type']
-            monthly_cost = f"{prod_rec['monthly_cost']:,.0f}"
-            optimization = f"{prod_rec.get('optimization_score', 85)}%"
+def test_pdf_generation():
+    """Test PDF generation with sample data"""
+    try:
+        if not REPORTLAB_AVAILABLE:
+            return False, "ReportLab not available"
             
-            summary_data.append([db_name, engine, instance_type, monthly_cost, optimization])
-            total_monthly_cost += prod_rec['monthly_cost']
+        # Create sample data
+        sample_results = {
+            'inputs': {
+                'db_name': 'TestDatabase',
+                'engine': 'postgres',
+                'region': 'us-east-1',
+                'cores': 4,
+                'cpu_util': 70,
+                'ram': 16,
+                'ram_util': 75,
+                'storage': 1000,
+                'iops': 3000
+            },
+            'recommendations': {
+                'PROD': {
+                    'instance_type': 'db.m5.large',
+                    'vcpus': 2,
+                    'ram_gb': 8,
+                    'storage_gb': 1000,
+                    'monthly_cost': 500,
+                    'annual_cost': 6000,
+                    'optimization_score': 85
+                }
+            },
+            'ai_insights': {}
+        }
+        
+        pdf_gen = PDFReportGenerator()
+        pdf_data = pdf_gen.generate_report(sample_results)
+        return True, f"PDF test successful. Generated {len(pdf_data)} bytes."
+    except Exception as e:
+        return False, f"PDF test failed: {str(e)}"
 
-        table = Table(summary_data, colWidths=[1.5*inch, 1*inch, 1.5*inch, 1.2*inch, 1*inch])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#667eea')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-            ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8fafc')),
-            ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
-            ('LEFTPADDING', (0,0), (-1,-1), 6),
-            ('RIGHTPADDING', (0,0), (-1,-1), 6),
-            ('TOPPADDING', (0,0), (-1,-1), 6),
-            ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ]))
-        story.append(table)
-        story.append(Spacer(1, 0.2 * inch))
-
-        story.append(Paragraph(f"Total Monthly Cost (Production): ${total_monthly_cost:,.0f}", self.styles['Normal_Custom']))
-        story.append(Paragraph(f"Total Annual Cost (Production): ${total_monthly_cost * 12:,.0f}", self.styles['Normal_Custom']))
-        story.append(Spacer(1, 0.2 * inch))
-
-        # Detailed Analysis for Each Database
-        for i, result in enumerate(all_results):
-            inputs = result.get('inputs', {})
-            recommendations = result.get('recommendations', {})
-            ai_insights = result.get('ai_insights', {})
-            db_name = inputs.get('db_name', f'Database {i+1}')
-
-            story.append(Paragraph(f"2. Detailed Analysis: {db_name}", self.styles['H2_Custom']))
-            story.append(Paragraph("2.1. Current Configuration", self.styles['H3_Custom']))
-            story.append(Paragraph(f"• Engine: {inputs.get('engine', 'N/A').upper()}", self.styles['Bullet_Custom']))
-            story.append(Paragraph(f"• Region: {inputs.get('region', 'N/A')}", self.styles['Bullet_Custom']))
-            story.append(Paragraph(f"• CPU: {inputs.get('cores', 'N/A')} cores ({inputs.get('cpu_util', 'N/A')}% util)", self.styles['Bullet_Custom']))
-            story.append(Paragraph(f"• RAM: {inputs.get('ram', 'N/A')} GB ({inputs.get('ram_util', 'N/A')}% util)", self.styles['Bullet_Custom']))
-            story.append(Paragraph(f"• Storage: {inputs.get('storage', 'N/A'):,} GB ({inputs.get('iops', 'N/A'):,} IOPS)", self.styles['Bullet_Custom']))
-            story.append(Spacer(1, 0.1 * inch))
-
-            story.append(Paragraph("2.2. Recommended Configurations", self.styles['H3_Custom']))
-            rec_table_data = [["Environment", "Instance Type", "vCPUs", "RAM (GB)", "Monthly Cost ($)"]]
-            for env, rec in recommendations.items():
-                rec_table_data.append([
-                    env, 
-                    rec['instance_type'], 
-                    rec['vcpus'], 
-                    rec['ram_gb'], 
-                    f"{rec['monthly_cost']:,.0f}"
-                ])
+def show_pdf_status():
+    """Show PDF generation status in the sidebar"""
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 📄 PDF Report Status")
+        
+        ready, message = check_pdf_requirements()
+        if ready:
+            st.success(f"✅ {message}")
             
-            rec_table = Table(rec_table_data, colWidths=[1.2*inch, 1.5*inch, 0.8*inch, 0.8*inch, 1.2*inch])
-            rec_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#764ba2')),
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-                ('BACKGROUND', (0, 1), (-1, -1), colors.HexColor('#f8fafc')),
-                ('GRID', (0, 0), (-1, -1), 1, colors.HexColor('#e2e8f0')),
-                ('LEFTPADDING', (0,0), (-1,-1), 6),
-                ('RIGHTPADDING', (0,0), (-1,-1), 6),
-                ('TOPPADDING', (0,0), (-1,-1), 6),
-                ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-            ]))
-            story.append(rec_table)
-            story.append(Spacer(1, 0.2 * inch))
+            # Optional: Add test button
+            if st.button("🧪 Test PDF Generation", key="test_pdf"):
+                test_ready, test_message = test_pdf_generation()
+                if test_ready:
+                    st.success(f"✅ {test_message}")
+                else:
+                    st.error(f"❌ {test_message}")
+        else:
+            st.error(f"❌ {message}")
+            st.info("💡 Install ReportLab to enable PDF reports:\n```\npip install reportlab\n```")
 
-            if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
-                workload = ai_insights['workload']
-                story.append(Paragraph("2.3. AI Workload Insights", self.styles['H3_Custom']))
-                story.append(Paragraph(f"• Workload Type: {workload.get('workload_type', 'N/A')}", self.styles['Bullet_Custom']))
-                story.append(Paragraph(f"• Migration Complexity: {workload.get('complexity', 'N/A')}", self.styles['Bullet_Custom']))
-                story.append(Paragraph(f"• Estimated Timeline: {workload.get('timeline', 'N/A')}", self.styles['Bullet_Custom']))
+def render_troubleshooting_section():
+    """Render troubleshooting section for PDF issues"""
+    with st.expander("🔧 PDF Generation Troubleshooting", expanded=False):
+        st.markdown("""
+        ### Common PDF Generation Issues:
+        
+        **1. ReportLab Not Installed**
+        ```bash
+        pip install reportlab
+        ```
+        
+        **2. Permission Issues**
+        - Make sure you have write permissions
+        - Try running with administrator/sudo if needed
+        
+        **3. Memory Issues (Large Reports)**
+        - Try generating reports for fewer databases at once
+        - Close other applications to free up memory
+        
+        **4. Browser Download Issues**
+        - Try right-clicking the download button and "Save link as..."
+        - Check if your browser is blocking downloads
+        - Clear browser cache and try again
+        
+        **5. File Size Issues**
+        - Large reports may take time to generate
+        - Wait for the spinner to complete before clicking download
+        
+        ### Test PDF Generation:
+        """)
+        
+        if st.button("🧪 Run PDF Test", key="troubleshoot_pdf_test"):
+            ready, message = check_pdf_requirements()
+            if ready:
+                test_ready, test_message = test_pdf_generation()
+                if test_ready:
+                    st.success(f"✅ PDF Generation Test Passed: {test_message}")
+                else:
+                    st.error(f"❌ PDF Generation Test Failed: {test_message}")
+            else:
+                st.error(f"❌ Requirements Check Failed: {message}")
                 
-                if workload.get('recommendations'):
-                    story.append(Paragraph("Key Recommendations:", self.styles['Normal_Custom']))
-                    for rec in workload['recommendations']:
-                        story.append(Paragraph(f"• {rec}", self.styles['Bullet_Custom']))
-                if workload.get('risks'):
-                    story.append(Paragraph("Identified Risks:", self.styles['Normal_Custom']))
-                    for risk in workload['risks']:
-                        story.append(Paragraph(f"• {risk}", self.styles['Bullet_Custom']))
-                story.append(Spacer(1, 0.2 * inch))
-
-            if 'migration' in ai_insights and 'error' not in ai_insights['migration']:
-                migration = ai_insights['migration']
-                story.append(Paragraph("2.4. Migration Strategy Overview", self.styles['H3_Custom']))
-                story.append(Paragraph(f"• Estimated Timeline: {migration.get('timeline', 'N/A')}", self.styles['Bullet_Custom']))
-                if migration.get('phases'):
-                    story.append(Paragraph("Migration Phases:", self.styles['Normal_Custom']))
-                    for phase in migration['phases']:
-                        story.append(Paragraph(f"• {phase}", self.styles['Bullet_Custom']))
-                if migration.get('tools'):
-                    story.append(Paragraph("Recommended Tools:", self.styles['Normal_Custom']))
-                    for tool in migration['tools']:
-                        story.append(Paragraph(f"• {tool}", self.styles['Bullet_Custom']))
-                story.append(Spacer(1, 0.2 * inch))
-
-        doc.build(story)
-        buffer.seek(0)
-        return buffer.getvalue()
+        st.markdown("""
+        ### Alternative Export Options:
+        If PDF generation continues to fail, you can:
+        - Use Excel export (usually more reliable)
+        - Copy the displayed analysis text
+        - Use the JSON export for technical details
+        - Take screenshots of the analysis results
+        """)
 
 def initialize_session_state():
-    """Initialize all session state variables"""
+    """Initialize all session state variables with enhanced error handling"""
     if 'ai_analytics' not in st.session_state:
         st.session_state.ai_analytics = None
     if 'calculator' not in st.session_state:
         st.session_state.calculator = EnhancedRDSCalculator()
-    if 'pdf_generator' not in st.session_state: # Initialize PDF generator
-        st.session_state.pdf_generator = PDFReportGenerator()
+    
+    # Initialize PDF generator with error handling
+    if 'pdf_generator' not in st.session_state:
+        try:
+            if REPORTLAB_AVAILABLE:
+                st.session_state.pdf_generator = PDFReportGenerator()
+            else:
+                st.session_state.pdf_generator = None
+        except Exception as e:
+            st.session_state.pdf_generator = None
+            if 'pdf_warning_shown' not in st.session_state:
+                st.warning(f"⚠️ PDF generator initialization failed: {str(e)}")
+                st.session_state.pdf_warning_shown = True
+    
     if 'file_analysis' not in st.session_state:
         st.session_state.file_analysis = None
     if 'file_inputs' not in st.session_state:
         st.session_state.file_inputs = None
     if 'last_analysis_results' not in st.session_state:
-        st.session_state.last_analysis_results = None # To store results for reports
+        st.session_state.last_analysis_results = None
 
 def main():
     """Main application function"""
@@ -1358,6 +1504,9 @@ def main():
             enable_ai_analysis = st.checkbox("Enable AI Workload Analysis", value=True)
             enable_predictions = st.checkbox("Enable Future Predictions", value=True)
             enable_migration_strategy = st.checkbox("Generate Migration Strategy", value=True)
+        
+        # Show PDF status
+        show_pdf_status()
     
     # Collect inputs
     inputs = {
@@ -1393,6 +1542,7 @@ def main():
     # Tab 4: Reports & Export
     with main_tabs[3]:
         render_reports_tab()
+        render_troubleshooting_section()
 
 def render_ai_analysis_tab(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy, api_key):
     """Render the AI Analysis tab"""
@@ -1616,7 +1766,6 @@ def process_bulk_upload(uploaded_file, enable_ai_analysis, enable_predictions, e
             </div>
             """, unsafe_allow_html=True)
 
-
         else:
             st.error("❌ No valid database configurations found. Please check your file format and data.")
             
@@ -1696,7 +1845,7 @@ def render_manual_config_tab(inputs, enable_ai_analysis, enable_predictions, ena
             generate_sample_report()
 
 def render_reports_tab():
-    """Render the reports and export tab"""
+    """Render the reports and export tab with fixed PDF downloads"""
     st.markdown("### 📋 Reports & Export Center")
     
     st.markdown("#### 📊 Available Reports")
@@ -1717,10 +1866,12 @@ def render_reports_tab():
         </div>
         """, unsafe_allow_html=True)
         
+        # Excel Report Button
         if st.button("📈 Generate Executive Report (Excel)", use_container_width=True, key="generate_executive_report_tab"):
             if st.session_state.last_analysis_results:
                 try:
-                    excel_data = export_full_report(st.session_state.last_analysis_results)
+                    with st.spinner("🔄 Generating Excel report..."):
+                        excel_data = export_full_report(st.session_state.last_analysis_results)
                     st.download_button(
                         label="📊 Download Executive Excel Report",
                         data=excel_data,
@@ -1735,23 +1886,33 @@ def render_reports_tab():
             else:
                 st.info("💡 No analysis results found. Please run an analysis first (Manual Config or Bulk Upload).")
         
-        if st.button("📄 Generate Executive Report (PDF)", use_container_width=True, key="generate_executive_report_pdf_tab"):
-            if st.session_state.last_analysis_results:
-                try:
+        # PDF Report Button - Fixed Version
+        if st.session_state.last_analysis_results and st.session_state.pdf_generator:
+            try:
+                with st.spinner("🔄 Preparing PDF report..."):
                     pdf_data = st.session_state.pdf_generator.generate_report(st.session_state.last_analysis_results)
-                    st.download_button(
-                        label="⬇️ Download Executive PDF Report",
-                        data=pdf_data,
-                        file_name=f"executive_migration_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
-                        mime="application/pdf",
-                        use_container_width=True,
-                        key="download_executive_pdf_tab"
-                    )
-                    st.success("✅ Executive PDF report generated successfully!")
-                except Exception as e:
-                    st.error(f"PDF Export failed: {str(e)}")
-            else:
-                st.info("💡 No analysis results found. Please run an analysis first (Manual Config or Bulk Upload).")
+                
+                st.download_button(
+                    label="📄 Download Executive PDF Report",
+                    data=pdf_data,
+                    file_name=f"executive_migration_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
+                    mime="application/pdf",
+                    use_container_width=True,
+                    key="download_executive_pdf_tab",
+                    help="Click to download the comprehensive PDF report"
+                )
+            except Exception as e:
+                st.error(f"❌ PDF generation failed: {str(e)}")
+                st.info("💡 Make sure all required libraries are installed: pip install reportlab")
+        else:
+            if not st.session_state.last_analysis_results:
+                st.info("💡 No analysis results found. Please run an analysis first.")
+            elif not st.session_state.pdf_generator:
+                if not REPORTLAB_AVAILABLE:
+                    st.error("❌ PDF generation unavailable: ReportLab not installed")
+                    st.info("💡 Install ReportLab: pip install reportlab")
+                else:
+                    st.error("❌ PDF generator initialization failed")
 
     with report_cols[1]:
         st.markdown("""
@@ -2286,7 +2447,7 @@ def render_cost_analysis_tab(recommendations, inputs):
             xaxis_title_font_size=14,
             yaxis_title_font_size=14
         )
-        st.plotly_chart(fig1, use_container_width=True, config={'responsive': True}) # Added config
+        st.plotly_chart(fig1, use_container_width=True, config={'responsive': True})
     
     with cost_vis_cols[1]:
         # Production cost breakdown
@@ -2304,7 +2465,7 @@ def render_cost_analysis_tab(recommendations, inputs):
             )
             fig2.update_traces(textposition='inside', textinfo='percent+label')
             fig2.update_layout(height=400, title_font_size=16)
-            st.plotly_chart(fig2, use_container_width=True, config={'responsive': True}) # Added config
+            st.plotly_chart(fig2, use_container_width=True, config={'responsive': True})
     
     # Cost comparison with on-premise
     st.markdown("##### 📊 Cost Comparison & Savings Analysis")
@@ -2351,7 +2512,7 @@ def render_cost_analysis_tab(recommendations, inputs):
         labels={'value': 'Annual Cost ($)', 'variable': 'Infrastructure'}
     )
     fig3.update_layout(height=400, title_font_size=16)
-    st.plotly_chart(fig3, use_container_width=True, config={'responsive': True}) # Added config
+    st.plotly_chart(fig3, use_container_width=True, config={'responsive': True})
 
 def render_future_planning_tab(ai_insights, recommendations, inputs):
     """Render future planning insights"""
@@ -2890,7 +3051,7 @@ def render_bulk_ai_tab(all_results):
     
     for result in clean_results:
         ai_insights = result.get('ai_insights', {})
-        if 'workload' in ai_insights and 'error' not in ai_insights['workload']: # Re-check inside loop to be safe
+        if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
             workload = ai_insights['workload']
             
             # Aggregate workload types
@@ -2918,7 +3079,7 @@ def render_bulk_ai_tab(all_results):
             )
             fig_workload.update_traces(textposition='inside', textinfo='percent+label')
             fig_workload.update_layout(height=350)
-            st.plotly_chart(fig_workload, use_container_width=True, config={'responsive': True}) # Added config
+            st.plotly_chart(fig_workload, use_container_width=True, config={'responsive': True})
     
     with ai_cols[1]:
         if complexity_levels:
@@ -2927,7 +3088,7 @@ def render_bulk_ai_tab(all_results):
             complexity_colors = {"High": "#ef4444", "Medium": "#f59e0b", "Low": "#10b981"}
             
             for complexity, count in complexity_levels.items():
-                percentage = (count / len(clean_results)) * 100 # Calculate percentage based on clean_results
+                percentage = (count / len(clean_results)) * 100
                 color = complexity_colors.get(complexity, "#64748b")
                 
                 st.markdown(f"""
@@ -2949,7 +3110,7 @@ def render_bulk_ai_tab(all_results):
         with rec_cols[0]:
             for i in range(0, len(top_recs), 2):
                 rec, count = top_recs[i]
-                percentage = (count / len(clean_results)) * 100 # Calculate percentage based on clean_results
+                percentage = (count / len(clean_results)) * 100
                 st.markdown(f"""
                 <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
                     <strong>{rec}</strong><br>
@@ -2961,7 +3122,7 @@ def render_bulk_ai_tab(all_results):
             for i in range(1, len(top_recs), 2):
                 if i < len(top_recs):
                     rec, count = top_recs[i]
-                    percentage = (count / len(clean_results)) * 100 # Calculate percentage based on clean_results
+                    percentage = (count / len(clean_results)) * 100
                     st.markdown(f"""
                     <div style="background: #f0f9ff; border: 1px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 8px;">
                         <strong>{rec}</strong><br>
@@ -2998,7 +3159,7 @@ def render_bulk_cost_tab(all_results):
             showlegend=False,
             title_font_size=16
         )
-        st.plotly_chart(fig1, use_container_width=True, config={'responsive': True}) # Added config
+        st.plotly_chart(fig1, use_container_width=True, config={'responsive': True})
     
     with viz_cols[1]:
         # Cost by engine type
@@ -3018,7 +3179,7 @@ def render_bulk_cost_tab(all_results):
         )
         fig2.update_traces(textposition='inside', textinfo='percent+label')
         fig2.update_layout(height=400, title_font_size=16)
-        st.plotly_chart(fig2, use_container_width=True, config={'responsive': True}) # Added config
+        st.plotly_chart(fig2, use_container_width=True, config={'responsive': True})
     
     # Cost summary metrics
     st.markdown("##### 📊 Financial Summary")
@@ -3040,7 +3201,6 @@ def render_bulk_cost_tab(all_results):
         st.metric("Monthly Savings", f"${total_savings:,.0f}", f"{savings_pct:.0f}%")
     
     with financial_cols[3]:
-        # Adjusted for division by zero if total_savings is 0 or negative (no ROI)
         payback_months = (total_monthly * 0.1) / (total_savings / 12) if total_savings > 0 else (0 if total_savings == 0 else float('inf'))
         st.metric("ROI Payback", f"{payback_months:.0f} months" if payback_months > 0 and payback_months != float('inf') else ("Immediate" if payback_months == 0 else "N/A"))
 
@@ -3184,16 +3344,16 @@ def display_single_database_analysis(result, db_number):
         config_comparison = pd.DataFrame({
             "Metric": ["CPU Cores", "RAM (GB)", "Storage (GB)", "Peak CPU %", "Peak RAM %"],
             "Current": [
-                str(inputs.get('cores', 0)), # Cast to string
-                str(inputs.get('ram', 0)), # Cast to string
-                str(inputs.get('storage', 0)), # Cast to string
+                str(inputs.get('cores', 0)),
+                str(inputs.get('ram', 0)),
+                str(inputs.get('storage', 0)),
                 f"{inputs.get('cpu_util', 0)}%",
                 f"{inputs.get('ram_util', 0)}%"
             ],
             "Recommended (PROD)": [
-                str(recommendations['PROD']['vcpus']), # Cast to string
-                str(recommendations['PROD']['ram_gb']), # Cast to string
-                str(recommendations['PROD']['storage_gb']), # Cast to string
+                str(recommendations['PROD']['vcpus']),
+                str(recommendations['PROD']['ram_gb']),
+                str(recommendations['PROD']['storage_gb']),
                 "N/A",
                 "N/A"
             ]
@@ -3202,7 +3362,7 @@ def display_single_database_analysis(result, db_number):
         st.dataframe(config_comparison, use_container_width=True, hide_index=True)
 
 def render_bulk_export_tab(all_results):
-    """Render bulk export and reporting options"""
+    """Render bulk export and reporting options with fixed PDF downloads"""
     st.markdown("#### 📄 Export & Reporting Options")
     
     # Export summary
@@ -3222,9 +3382,11 @@ def render_bulk_export_tab(all_results):
         </div>
         """, unsafe_allow_html=True)
         
+        # Excel Report Button
         if st.button("📈 Generate Executive Report (Excel)", use_container_width=True, key="generate_executive_report_bulk_excel"):
             try:
-                excel_data = export_full_report(all_results)
+                with st.spinner("🔄 Generating Excel report..."):
+                    excel_data = export_full_report(all_results)
                 st.download_button(
                     label="📊 Download Executive Excel Report",
                     data=excel_data,
@@ -3237,20 +3399,30 @@ def render_bulk_export_tab(all_results):
             except Exception as e:
                 st.error(f"Export failed: {str(e)}")
 
-        if st.button("📄 Generate Executive Report (PDF)", use_container_width=True, key="generate_executive_report_bulk_pdf"):
+        # PDF Report Button - Fixed Version
+        if st.session_state.pdf_generator:
             try:
-                pdf_data = st.session_state.pdf_generator.generate_report(all_results)
+                with st.spinner("🔄 Preparing PDF report..."):
+                    pdf_data = st.session_state.pdf_generator.generate_report(all_results)
+                
                 st.download_button(
-                    label="⬇️ Download Executive PDF Report",
+                    label="📄 Download Executive PDF Report",
                     data=pdf_data,
                     file_name=f"executive_migration_report_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf",
                     mime="application/pdf",
                     use_container_width=True,
-                    key="download_executive_pdf_bulk"
+                    key="download_executive_pdf_bulk",
+                    help="Click to download the comprehensive PDF report for all databases"
                 )
-                st.success("✅ Executive PDF report generated successfully!")
             except Exception as e:
-                st.error(f"PDF Export failed: {str(e)}")
+                st.error(f"❌ PDF generation failed: {str(e)}")
+                st.info("💡 Make sure all required libraries are installed: pip install reportlab")
+        else:
+            if not REPORTLAB_AVAILABLE:
+                st.error("❌ PDF generation unavailable: ReportLab not installed")
+                st.info("💡 Install ReportLab: pip install reportlab")
+            else:
+                st.error("❌ PDF generator initialization failed")
     
     with export_cols[1]:
         st.markdown("""
