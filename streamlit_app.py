@@ -21,180 +21,70 @@ st.set_page_config(
 # Custom CSS for modern styling
 st.markdown("""
 <style>
-    /* ... existing CSS styles ... */
+    .main-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 2rem;
+        border-radius: 10px;
+        text-align: center;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .ai-badge {
+        background: rgba(255,255,255,0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        display: inline-block;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+    }
+    .metric-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-left: 4px solid #667eea;
+        margin-bottom: 1rem;
+    }
+    .ai-insight {
+        background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+        border: 1px solid #0ea5e9;
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+    }
+    .recommendation-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 0.5rem 0;
+    }
+    .risk-card {
+        padding: 1rem;
+        border-radius: 8px;
+        margin: 0.5rem 0;
+    }
+    .medium-risk {
+        background: #fef3c7;
+        border: 1px solid #f59e0b;
+    }
+    .footer-content {
+        text-align: center;
+        padding: 2rem;
+        background: #f8fafc;
+        border-radius: 8px;
+        margin-top: 2rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 class AIAnalytics:
     """AI-powered analytics engine using Claude API"""
-    # ... existing AIAnalytics class implementation ...
-
-class EnhancedRDSCalculator:
-    """Enhanced RDS calculator with AI integration"""
-    # ... existing EnhancedRDSCalculator class implementation ...
-
-def initialize_session_state():
-    """Initialize all session state variables"""
-    if 'ai_analytics' not in st.session_state:
-        st.session_state.ai_analytics = None
-    if 'calculator' not in st.session_state:
-        st.session_state.calculator = EnhancedRDSCalculator()
-    if 'file_analysis' not in st.session_state:
-        st.session_state.file_analysis = None
-    if 'file_inputs' not in st.session_state:
-        st.session_state.file_inputs = None
-
-def render_header():
-    """Render application header"""
-    st.markdown("""
-    <div class="main-header">
-        <div class="ai-badge">🤖 Powered by AI</div>
-        <h1>AI Database Migration Studio</h1>
-        <p>Enterprise database migration planning with intelligent recommendations, cost optimization, and risk assessment</p>
-    </div>
-    """, unsafe_allow_html=True)
-
-def render_sidebar():
-    """Render sidebar with configuration inputs"""
-    with st.sidebar:
-        st.header("🔑 API Configuration")
-        api_key = st.text_input(
-            "Claude API Key", 
-            type="password",
-            help="Enter your Anthropic Claude API key to enable AI features"
-        )
-        
-        if api_key:
-            try:
-                st.session_state.ai_analytics = AIAnalytics(api_key)
-                st.success("✅ AI Analytics Enabled")
-            except Exception as e:
-                st.error(f"❌ API Key Error: {str(e)}")
-        else:
-            st.warning("⚠️ Enter API key to unlock AI features")
-        
-        st.markdown("---")
-        st.header("🎯 Migration Configuration")
-        render_database_settings()
-        
-    return api_key
-
-def render_database_settings():
-    """Render database settings in sidebar"""
-    # Database settings
-    st.subheader("Database Settings")
-    engine = st.selectbox("Database Engine", st.session_state.calculator.engines, index=0)
-    region = st.selectbox("AWS Region", st.session_state.calculator.regions, index=0)
     
-    # Current infrastructure
-    st.subheader("Current Infrastructure")
-    cores = st.number_input("CPU Cores", min_value=1, value=16, step=1)
-    cpu_util = st.slider("Peak CPU Utilization (%)", 1, 100, 65)
-    ram = st.number_input("RAM (GB)", min_value=1, value=64, step=1)
-    ram_util = st.slider("Peak RAM Utilization (%)", 1, 100, 75)
-    storage = st.number_input("Storage (GB)", min_value=1, value=1000, step=100)
-    iops = st.number_input("Peak IOPS", min_value=100, value=8000, step=1000)
+    def __init__(self, api_key: str):
+        self.client = anthropic.Anthropic(api_key=api_key)
     
-    # Migration settings
-    st.subheader("Migration Settings")
-    growth_rate = st.number_input("Annual Growth Rate (%)", min_value=0, max_value=100, value=15)
-    backup_days = st.slider("Backup Retention (Days)", 1, 35, 7)
-    years_projection = st.slider("Projection Years", 1, 5, 3)
-    data_transfer_gb = st.number_input("Monthly Data Transfer (GB)", min_value=0, value=100)
-    
-    # AI Settings
-    st.subheader("🤖 AI Features")
-    enable_ai_analysis = st.checkbox("Enable AI Workload Analysis", value=True)
-    enable_predictions = st.checkbox("Enable Future Predictions", value=True)
-    enable_migration_strategy = st.checkbox("Generate Migration Strategy", value=True)
-    
-    return {
-        'engine': engine,
-        'region': region,
-        'cores': cores,
-        'cpu_util': cpu_util,
-        'ram': ram,
-        'ram_util': ram_util,
-        'storage': storage,
-        'iops': iops,
-        'growth': growth_rate,
-        'backup_days': backup_days,
-        'years': years_projection,
-        'data_transfer_gb': data_transfer_gb,
-        'enable_ai_analysis': enable_ai_analysis,
-        'enable_predictions': enable_predictions,
-        'enable_migration_strategy': enable_migration_strategy
-    }
-
-def render_file_import():
-    """Render file import section"""
-    with st.expander("📁 Import Database Configurations", expanded=True):
-        uploaded_file = st.file_uploader(
-            "Upload CSV/Excel file with database configurations", 
-            type=["csv", "xlsx"],
-            help="Upload a file containing multiple database configurations"
-        )
-        
-        if uploaded_file:
-            valid_inputs, errors = parse_uploaded_file(uploaded_file)
-            
-            if errors:
-                for error in errors:
-                    st.error(error)
-            
-            if valid_inputs:
-                st.success(f"✅ Successfully parsed {len(valid_inputs)} valid database configurations")
-                st.session_state.file_inputs = valid_inputs
-                
-                # Show preview
-                with st.expander("Preview Imported Data"):
-                    preview_df = pd.DataFrame(valid_inputs)
-                    st.dataframe(preview_df.head())
-                
-                # Analysis options
-                st.subheader("Analysis Options")
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    enable_ai_analysis = st.checkbox("Enable AI Workload Analysis", value=True)
-                    enable_predictions = st.checkbox("Enable Future Predictions", value=True)
-                
-                with col2:
-                    enable_migration_strategy = st.checkbox("Generate Migration Strategy", value=True)
-                    export_format = st.selectbox("Export Format", ["Excel", "PDF", "HTML"])
-                
-                if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
-                    if not st.session_state.get('api_key'):
-                        st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
-                    else:
-                        analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
-    return uploaded_file
-
-def render_manual_input():
-    """Render manual input section"""
-    with st.expander("🧪 Manual Input (Single Database)", expanded=False):
-        inputs = render_database_settings()
-        
-        # Main content area
-        col1, col2 = st.columns([3, 1])
-        
-        with col1:
-            if st.button("🚀 Generate AI-Powered Analysis", type="primary", use_container_width=True):
-                if not st.session_state.get('api_key'):
-                    st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
-                else:
-                    analyze_workload(
-                        inputs, 
-                        inputs['enable_ai_analysis'], 
-                        inputs['enable_predictions'], 
-                        inputs['enable_migration_strategy']
-                    )
-        
-        with col2:
-            if st.button("📊 Export Sample Report", use_container_width=True):
-                generate_sample_report()
-    
-    def analyze_workload_patterns(self, workload_data: Dict) -> Dict:
+    def analyze_workload_patterns(self, workload_data: dict) -> dict:
         """Analyze workload patterns and provide intelligent recommendations"""
         
         prompt = f"""
@@ -237,7 +127,7 @@ def render_manual_input():
         except Exception as e:
             return {"error": f"AI analysis failed: {str(e)}"}
     
-    def generate_migration_strategy(self, analysis_data: Dict) -> Dict:
+    def generate_migration_strategy(self, analysis_data: dict) -> dict:
         """Generate detailed migration strategy with AI insights"""
         
         prompt = f"""
@@ -273,7 +163,7 @@ def render_manual_input():
         except Exception as e:
             return {"error": f"Migration strategy generation failed: {str(e)}"}
     
-    def predict_future_requirements(self, historical_data: Dict, years: int = 3) -> Dict:
+    def predict_future_requirements(self, historical_data: dict, years: int = 3) -> dict:
         """Predict future resource requirements using AI"""
         
         prompt = f"""
@@ -315,7 +205,7 @@ def render_manual_input():
         except Exception as e:
             return {"error": f"Prediction generation failed: {str(e)}"}
     
-    def _parse_ai_response(self, response_text: str) -> Dict:
+    def _parse_ai_response(self, response_text: str) -> dict:
         """Parse AI response into structured data"""
         # Extract key insights from the response
         lines = response_text.split('\n')
@@ -395,7 +285,7 @@ def render_manual_input():
         
         return result
     
-    def _parse_migration_strategy(self, response_text: str) -> Dict:
+    def _parse_migration_strategy(self, response_text: str) -> dict:
         """Parse migration strategy response"""
         return {
             "phases": [
@@ -434,7 +324,7 @@ def render_manual_input():
             "full_strategy": response_text
         }
     
-    def _parse_predictions(self, response_text: str) -> Dict:
+    def _parse_predictions(self, response_text: str) -> dict:
         """Parse prediction response"""
         return {
             "cpu_trend": "Gradual increase expected",
@@ -547,7 +437,7 @@ class EnhancedRDSCalculator:
         }
         return multipliers.get(region, 1.0)
     
-    def calculate_requirements(self, inputs: Dict, env: str) -> Dict:
+    def calculate_requirements(self, inputs: dict, env: str) -> dict:
         """Calculate resource requirements with AI-enhanced logic"""
         profile = self.env_profiles[env]
         
@@ -598,7 +488,7 @@ class EnhancedRDSCalculator:
             "optimization_score": self._calculate_optimization_score(instance, vcpus, ram)
         }
     
-    def _select_optimal_instance(self, vcpus: int, ram: int, engine: str, region: str, env: str = "PROD") -> Dict:
+    def _select_optimal_instance(self, vcpus: int, ram: int, engine: str, region: str, env: str = "PROD") -> dict:
         """Select optimal instance type using intelligent matching with environment awareness"""
         region_data = self.instance_db.get(region, self.instance_db["us-east-1"])
         engine_instances = region_data.get(engine, region_data.get("postgres", []))
@@ -693,7 +583,7 @@ class EnhancedRDSCalculator:
         # Fallback if no instances found
         return engine_instances[0] if engine_instances else {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.4}}
     
-    def _calculate_comprehensive_costs(self, instance: Dict, storage: int, inputs: Dict, env: str) -> Dict:
+    def _calculate_comprehensive_costs(self, instance: dict, storage: int, inputs: dict, env: str) -> dict:
         """Calculate comprehensive monthly costs"""
         # Instance cost
         instance_cost = instance["pricing"]["ondemand"] * 24 * 30
@@ -733,7 +623,7 @@ class EnhancedRDSCalculator:
             "total": total_cost
         }
     
-    def _calculate_optimization_score(self, instance: Dict, required_vcpus: int, required_ram: int) -> int:
+    def _calculate_optimization_score(self, instance: dict, required_vcpus: int, required_ram: int) -> int:
         """Calculate optimization score (0-100)"""
         if instance["type"] == "db.serverless":
             return 95  # Serverless is highly optimized for variable workloads
@@ -747,13 +637,22 @@ class EnhancedRDSCalculator:
         # Convert to 0-100 score
         return int(avg_efficiency * 100)
 
-# Initialize session state
-if 'ai_analytics' not in st.session_state:
-    st.session_state.ai_analytics = None
-if 'calculator' not in st.session_state:
-    st.session_state.calculator = EnhancedRDSCalculator()
+def initialize_session_state():
+    """Initialize all session state variables"""
+    if 'ai_analytics' not in st.session_state:
+        st.session_state.ai_analytics = None
+    if 'calculator' not in st.session_state:
+        st.session_state.calculator = EnhancedRDSCalculator()
+    if 'file_analysis' not in st.session_state:
+        st.session_state.file_analysis = None
+    if 'file_inputs' not in st.session_state:
+        st.session_state.file_inputs = None
 
 def main():
+    """Main application function"""
+    # Initialize session state
+    initialize_session_state()
+    
     # Header with AI branding
     st.markdown("""
     <div class="main-header">
@@ -829,6 +728,39 @@ def main():
         'data_transfer_gb': data_transfer_gb
     }
     
+    # File import section
+    with st.expander("📁 Import Database Configurations", expanded=False):
+        uploaded_file = st.file_uploader(
+            "Upload CSV/Excel file with database configurations", 
+            type=["csv", "xlsx"],
+            help="Upload a file containing multiple database configurations"
+        )
+        
+        if uploaded_file:
+            try:
+                valid_inputs, errors = parse_uploaded_file(uploaded_file)
+                
+                if errors:
+                    for error in errors:
+                        st.error(error)
+                
+                if valid_inputs:
+                    st.success(f"✅ Successfully parsed {len(valid_inputs)} valid database configurations")
+                    st.session_state.file_inputs = valid_inputs
+                    
+                    # Show preview
+                    with st.expander("Preview Imported Data"):
+                        preview_df = pd.DataFrame(valid_inputs)
+                        st.dataframe(preview_df.head())
+                    
+                    if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
+                        if not api_key:
+                            st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
+                        else:
+                            analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+            except Exception as e:
+                st.error(f"Error processing file: {str(e)}")
+    
     # Main content area
     col1, col2 = st.columns([3, 1])
     
@@ -842,6 +774,121 @@ def main():
     with col2:
         if st.button("📊 Export Sample Report", use_container_width=True):
             generate_sample_report()
+
+def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy):
+    """Analyze multiple databases from uploaded file"""
+    progress_bar = st.progress(0)
+    status_text = st.empty()
+    
+    all_results = []
+    
+    try:
+        for i, inputs in enumerate(valid_inputs):
+            status_text.text(f"🔄 Analyzing database {i+1} of {len(valid_inputs)}...")
+            progress = (i + 1) / len(valid_inputs)
+            progress_bar.progress(progress)
+            
+            # Calculate recommendations for each environment
+            calculator = st.session_state.calculator
+            recommendations = {}
+            for env in calculator.env_profiles:
+                recommendations[env] = calculator.calculate_requirements(inputs, env)
+            
+            # AI Analysis if enabled
+            ai_insights = {}
+            if st.session_state.ai_analytics and enable_ai_analysis:
+                try:
+                    workload_analysis = st.session_state.ai_analytics.analyze_workload_patterns(inputs)
+                    ai_insights['workload'] = workload_analysis
+                except Exception as e:
+                    ai_insights['workload'] = {"error": str(e)}
+            
+            if st.session_state.ai_analytics and enable_predictions:
+                try:
+                    predictions = st.session_state.ai_analytics.predict_future_requirements(inputs, inputs.get('years', 3))
+                    ai_insights['predictions'] = predictions
+                except Exception as e:
+                    ai_insights['predictions'] = {"error": str(e)}
+            
+            if st.session_state.ai_analytics and enable_migration_strategy:
+                try:
+                    migration_strategy = st.session_state.ai_analytics.generate_migration_strategy(recommendations['PROD'])
+                    ai_insights['migration'] = migration_strategy
+                except Exception as e:
+                    ai_insights['migration'] = {"error": str(e)}
+            
+            all_results.append({
+                'inputs': inputs,
+                'recommendations': recommendations,
+                'ai_insights': ai_insights
+            })
+        
+        progress_bar.progress(1.0)
+        status_text.text("✅ Analysis complete for all databases!")
+        
+        # Display results
+        display_file_results(all_results)
+        
+    except Exception as e:
+        progress_bar.empty()
+        status_text.empty()
+        st.error(f"Analysis failed: {str(e)}")
+
+def display_file_results(all_results):
+    """Display results from file analysis"""
+    st.subheader("📊 Multi-Database Analysis Results")
+    
+    # Summary table
+    summary_data = []
+    for result in all_results:
+        prod_rec = result['recommendations']['PROD']
+        summary_data.append({
+            "Database": result['inputs'].get('db_name', 'N/A'),
+            "Engine": result['inputs'].get('engine', 'N/A'),
+            "Instance Type": prod_rec['instance_type'],
+            "vCPUs": prod_rec['vcpus'],
+            "RAM (GB)": prod_rec['ram_gb'],
+            "Storage (GB)": prod_rec['storage_gb'],
+            "Monthly Cost": prod_rec['monthly_cost'],
+            "Annual Cost": prod_rec['annual_cost']
+        })
+    
+    summary_df = pd.DataFrame(summary_data)
+    
+    # Display summary
+    st.dataframe(
+        summary_df,
+        column_config={
+            "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f"),
+            "Annual Cost": st.column_config.NumberColumn("Annual Cost", format="$%.0f")
+        },
+        use_container_width=True
+    )
+    
+    # Total costs
+    total_monthly = summary_df['Monthly Cost'].sum()
+    total_annual = summary_df['Annual Cost'].sum()
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Monthly Cost", f"${total_monthly:,.0f}")
+    with col2:
+        st.metric("Total Annual Cost", f"${total_annual:,.0f}")
+    with col3:
+        st.metric("Average per Database", f"${total_monthly/len(all_results):,.0f}/mo")
+    
+    # Export option
+    if st.button("📄 Export Detailed Report"):
+        try:
+            excel_data = export_full_report(all_results)
+            st.download_button(
+                label="Download Excel Report",
+                data=excel_data,
+                file_name=f"migration_analysis_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+        except Exception as e:
+            st.error(f"Export failed: {str(e)}")
 
 def analyze_workload(inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy):
     """Main analysis function with AI integration"""
@@ -927,7 +974,7 @@ def display_results(recommendations, ai_insights, inputs):
         st.markdown(f"""
         <div class="metric-card">
             <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Recommended Instance</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--primary);">{prod_rec['instance_type']}</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">{prod_rec['instance_type']}</div>
             <div style="font-size: 0.8rem; color: #888;">{prod_rec['vcpus']} vCPUs, {prod_rec['ram_gb']} GB RAM</div>
         </div>
         """, unsafe_allow_html=True)
@@ -936,7 +983,7 @@ def display_results(recommendations, ai_insights, inputs):
         st.markdown(f"""
         <div class="metric-card">
             <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Monthly Cost</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">${prod_rec['monthly_cost']:,.0f}</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${prod_rec['monthly_cost']:,.0f}</div>
             <div style="font-size: 0.8rem; color: #888;">Production Environment</div>
         </div>
         """, unsafe_allow_html=True)
@@ -948,7 +995,7 @@ def display_results(recommendations, ai_insights, inputs):
         st.markdown(f"""
         <div class="metric-card">
             <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Monthly Savings</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--success);">${monthly_savings:,.0f}</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #10b981;">${monthly_savings:,.0f}</div>
             <div style="font-size: 0.8rem; color: #888;">vs On-Premise</div>
         </div>
         """, unsafe_allow_html=True)
@@ -958,7 +1005,7 @@ def display_results(recommendations, ai_insights, inputs):
         st.markdown(f"""
         <div class="metric-card">
             <div style="font-size: 0.9rem; color: #666; margin-bottom: 0.5rem;">Optimization Score</div>
-            <div style="font-size: 1.5rem; font-weight: bold; color: var(--accent);">{optimization_score}%</div>
+            <div style="font-size: 1.5rem; font-weight: bold; color: #f59e0b;">{optimization_score}%</div>
             <div style="font-size: 0.8rem; color: #888;">Resource Efficiency</div>
         </div>
         """, unsafe_allow_html=True)
@@ -1126,66 +1173,6 @@ def display_results(recommendations, ai_insights, inputs):
     fig3.update_layout(height=400)
     st.plotly_chart(fig3, use_container_width=True)
     
-    # Performance Optimization Recommendations
-    st.subheader("⚡ Performance Optimization")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### 💾 Storage Optimization")
-        st.markdown(f"""
-        <div class="recommendation-card">
-            <p><strong>Recommended Storage:</strong> GP3 SSD</p>
-            <p><strong>Optimal Size:</strong> {prod_rec['storage_gb']:,} GB</p>
-            <p><strong>IOPS Configuration:</strong> {min(inputs['iops'], 16000):,}</p>
-            <p><strong>Expected Improvement:</strong> 20% better price/performance vs GP2</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    with col2:
-        st.markdown("#### 🖥️ Compute Optimization")
-        st.markdown(f"""
-        <div class="recommendation-card">
-            <p><strong>Instance Family:</strong> {prod_rec['instance_type'].split('.')[1].upper()}</p>
-            <p><strong>CPU Efficiency:</strong> {(inputs['cpu_util']*prod_rec['vcpus']/inputs['cores']):.0f}% target utilization</p>
-            <p><strong>Memory Efficiency:</strong> {(inputs['ram_util']*prod_rec['ram_gb']/inputs['ram']):.0f}% active usage</p>
-            <p><strong>Scaling Strategy:</strong> Auto-scaling recommended for non-PROD</p>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    # Future Predictions
-    if 'predictions' in ai_insights and 'error' not in ai_insights['predictions']:
-        st.subheader("🔮 Future Resource Predictions")
-        
-        predictions = ai_insights['predictions']
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown(f"""
-            <div class="ai-insight">
-                <h4>📊 AI Prediction Summary</h4>
-                <div style="margin: 1rem 0;">
-                    <p><strong>CPU Trend:</strong> {predictions.get('cpu_trend', 'Stable growth expected')}</p>
-                    <p><strong>Memory Trend:</strong> {predictions.get('memory_trend', 'Gradual increase with workload')}</p>
-                    <p><strong>Storage Trend:</strong> {predictions.get('storage_trend', 'Linear growth with data retention')}</p>
-                    <p><strong>Confidence Level:</strong> {predictions.get('confidence', 'High (85-90%)')}</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown("#### 🎯 Capacity Planning Recommendations")
-            recommendations_list = predictions.get('recommendations', [
-                "Plan for 20% capacity buffer above projected needs",
-                "Implement auto-scaling for variable workloads", 
-                "Review and optimize resource allocation quarterly",
-                "Consider reserved instances for predictable workloads"
-            ])
-            
-            for rec in recommendations_list:
-                st.markdown(f"• {rec}")
-    
     # Executive Summary
     st.subheader("📋 Executive Summary")
     
@@ -1254,7 +1241,6 @@ def generate_sample_report():
     
     st.info("💡 This is a sample report. Run the full analysis with your Claude API key to generate comprehensive reports with AI insights.")
 
-# Footer and additional information
 def render_footer():
     """Render application footer"""
     st.markdown("---")
