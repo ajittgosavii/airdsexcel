@@ -18,28 +18,51 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS for modern, professional styling
+# Enhanced CSS for modern, professional styling with proper layout fixes
 st.markdown("""
 <style>
+    /* Reset and base styles */
+    * {
+        box-sizing: border-box;
+    }
+    
     /* Hide Streamlit default elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
     
-    /* Main container styling */
-    .main {
+    /* Fix main container layout issues */
+    .main .block-container {
         padding-top: 2rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        max-width: 100%;
+        margin: 0 auto;
     }
     
-    /* Header styling */
+    /* Fix content alignment */
+    .stApp > .main {
+        padding: 0;
+        margin: 0;
+    }
+    
+    /* Ensure full width usage */
+    .element-container {
+        width: 100%;
+        margin: 0;
+    }
+    
+    /* Header styling with proper containment */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         padding: 3rem 2rem;
         border-radius: 15px;
         text-align: center;
         color: white;
-        margin-bottom: 2rem;
+        margin: 0 0 2rem 0;
         box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .ai-badge {
@@ -68,7 +91,7 @@ st.markdown("""
         line-height: 1.6;
     }
     
-    /* Metric cards */
+    /* Metric cards with proper spacing */
     .metric-card {
         background: white;
         padding: 2rem;
@@ -78,6 +101,8 @@ st.markdown("""
         margin-bottom: 1rem;
         text-align: center;
         transition: transform 0.2s ease, box-shadow 0.2s ease;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .metric-card:hover {
@@ -106,7 +131,7 @@ st.markdown("""
         margin-top: 0.5rem;
     }
     
-    /* AI insight cards */
+    /* AI insight cards with proper containment */
     .ai-insight {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         border: 2px solid #0ea5e9;
@@ -114,6 +139,8 @@ st.markdown("""
         padding: 2rem;
         margin: 1.5rem 0;
         box-shadow: 0 4px 20px rgba(14, 165, 233, 0.1);
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .ai-insight h4 {
@@ -130,12 +157,14 @@ st.markdown("""
         font-weight: 600;
     }
     
-    /* Status cards */
+    /* Status cards with proper width */
     .status-card {
         padding: 1.5rem;
         border-radius: 12px;
         margin: 1rem 0;
         border-left: 5px solid;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .status-success {
@@ -162,13 +191,15 @@ st.markdown("""
         color: #2a4365;
     }
     
-    /* Configuration section */
+    /* Configuration section with proper containment */
     .config-section {
         background: #f8fafc;
         padding: 2rem;
         border-radius: 12px;
         border: 1px solid #e2e8f0;
         margin: 1rem 0;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .config-header {
@@ -181,12 +212,14 @@ st.markdown("""
         gap: 0.5rem;
     }
     
-    /* Tab styling */
+    /* Tab styling fixes */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0.5rem;
         background: #f8fafc;
         padding: 0.5rem;
         border-radius: 10px;
+        width: 100%;
+        overflow-x: auto;
     }
     
     .stTabs [data-baseweb="tab"] {
@@ -195,6 +228,7 @@ st.markdown("""
         padding: 0.75rem 1.5rem;
         border: 1px solid #e2e8f0;
         font-weight: 500;
+        white-space: nowrap;
     }
     
     .stTabs [aria-selected="true"] {
@@ -203,7 +237,7 @@ st.markdown("""
         border: none;
     }
     
-    /* Footer styling */
+    /* Footer styling with proper containment */
     .footer-content {
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
         padding: 3rem 2rem;
@@ -211,6 +245,8 @@ st.markdown("""
         text-align: center;
         margin-top: 3rem;
         border: 1px solid #e2e8f0;
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .footer-content h3 {
@@ -226,6 +262,7 @@ st.markdown("""
         gap: 1rem;
         margin: 2rem 0;
         text-align: center;
+        width: 100%;
     }
     
     .feature-item {
@@ -237,45 +274,13 @@ st.markdown("""
         color: #4a5568;
     }
     
-    /* Button styling */
-    .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 8px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Sidebar styling */
-    .css-1d391kg {
-        background: #f8fafc;
-    }
-    
-    /* Progress bar styling */
-    .stProgress > div > div > div > div {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    }
-    
-    /* DataFrame styling */
-    .dataframe {
-        border-radius: 10px;
-        overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
-    
-    /* Analysis grid */
+    /* Analysis grid with proper responsive layout */
     .analysis-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
         gap: 1.5rem;
         margin: 1.5rem 0;
+        width: 100%;
     }
     
     .analysis-card {
@@ -284,6 +289,8 @@ st.markdown("""
         border-radius: 12px;
         padding: 1.5rem;
         box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        width: 100%;
+        box-sizing: border-box;
     }
     
     .analysis-card h6 {
@@ -293,7 +300,50 @@ st.markdown("""
         margin-bottom: 1rem;
     }
     
-    /* Responsive design */
+    /* Button styling fixes */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        transition: all 0.2s ease;
+        width: 100%;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Sidebar styling fixes */
+    .css-1d391kg {
+        background: #f8fafc;
+    }
+    
+    /* Progress bar styling */
+    .stProgress > div > div > div > div {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* DataFrame styling with proper width */
+    .dataframe {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        width: 100%;
+    }
+    
+    /* Fix column layout issues */
+    .row-widget.stSelectbox > div,
+    .row-widget.stNumberInput > div,
+    .row-widget.stSlider > div,
+    .row-widget.stTextInput > div {
+        width: 100%;
+    }
+    
+    /* Responsive design improvements */
     @media (max-width: 768px) {
         .main-header {
             padding: 2rem 1rem;
@@ -314,6 +364,57 @@ st.markdown("""
         .ai-insight {
             padding: 1.5rem;
         }
+        
+        .config-section {
+            padding: 1.5rem;
+        }
+        
+        .feature-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .analysis-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .main .block-container {
+            padding-left: 0.5rem;
+            padding-right: 0.5rem;
+        }
+    }
+    
+    /* Fix any overflow issues */
+    body, html {
+        overflow-x: hidden;
+    }
+    
+    .stApp {
+        overflow-x: hidden;
+    }
+    
+    /* Ensure proper container behavior */
+    .main .block-container {
+        overflow-x: hidden;
+    }
+    
+    /* Fix specific Streamlit column issues */
+    .stColumns {
+        gap: 1rem;
+    }
+    
+    .stColumn {
+        padding: 0 0.5rem;
+    }
+    
+    /* Override any problematic Streamlit defaults */
+    .element-container,
+    .stMarkdown,
+    .stSelectbox,
+    .stNumberInput,
+    .stSlider,
+    .stButton {
+        width: 100% !important;
+        max-width: 100% !important;
     }
 </style>
 """, unsafe_allow_html=True)
