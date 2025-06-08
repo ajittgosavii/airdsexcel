@@ -29,6 +29,8 @@ st.markdown("""
     html, body, [class*="css"] {
         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
         overflow-x: hidden; /* Prevent horizontal scrolling */
+        line-height: 1.6;
+        color: #333;
     }
     
     /* Hide Streamlit default elements */
@@ -37,16 +39,25 @@ st.markdown("""
     header {visibility: hidden;}
     .stDeployButton {display: none;}
     
-    /* Main container fixes */
+    /* Main app container */
+    .stApp {
+        max-width: 1400px; /* Overall max width for the entire app content */
+        margin: 0 auto; /* Center the entire app */
+        padding: 0 1rem; /* Add some horizontal padding */
+    }
+
+    /* Main block container for content */
     .main .block-container {
         padding-top: 1rem;
         padding-bottom: 2rem;
-        max-width: 95%; /* Keep max-width to ensure content doesn't stretch too wide */
-        margin: 0 auto; /* Center the content block */
+        max-width: 100% !important; /* Allow the content block to take full width of .stApp */
+        padding-left: 0rem; /* Remove default padding to allow more space for content */
+        padding-right: 0rem; /* Remove default padding */
+        margin: 0 auto; /* Ensure it stays centered within the app */
     }
     
     /* Ensure Streamlit elements respect container width */
-    .stDataFrame, .stPlotlyChart {
+    .stDataFrame, .stPlotlyChart, .stImage, .stVideo, .stAudio, .stExpander, .stTabs, .stColumns, .stAlert, .stSuccess, .stWarning, .stError, .stInfo {
         width: 100% !important;
         box-sizing: border-box; /* Include padding and border in the element's total width and height */
     }
@@ -54,7 +65,7 @@ st.markdown("""
     /* Header styling */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
+        padding: 2.5rem 2rem; /* Increased padding */
         border-radius: 12px;
         text-align: center;
         color: white;
@@ -64,50 +75,50 @@ st.markdown("""
     
     .ai-badge {
         background: rgba(255,255,255,0.2);
-        padding: 0.5rem 1rem;
-        border-radius: 20px;
+        padding: 0.6rem 1.2rem; /* Slightly larger */
+        border-radius: 24px; /* More rounded */
         display: inline-block;
-        margin-bottom: 1rem;
-        font-size: 0.9rem;
+        margin-bottom: 1.2rem; /* Increased margin */
+        font-size: 0.95rem;
         font-weight: 500;
     }
     
     .main-header h1 {
-        font-size: 2.5rem;
+        font-size: 2.8rem; /* Slightly larger */
         font-weight: 700;
         margin: 1rem 0;
         text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
     .main-header p {
-        font-size: 1.1rem;
+        font-size: 1.15rem; /* Slightly larger */
         opacity: 0.9;
         margin: 0;
-        line-height: 1.5;
+        line-height: 1.6;
     }
     
     /* Metric cards */
     .metric-card {
         background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        padding: 1.8rem; /* Increased padding */
+        border-radius: 12px; /* More rounded */
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08); /* More pronounced shadow */
         border: 1px solid #e2e8f0;
         text-align: center;
-        transition: transform 0.2s ease;
-        height: 120px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease; /* Added box-shadow transition */
+        height: 130px; /* Slightly taller */
         display: flex;
         flex-direction: column;
         justify-content: center;
     }
     
     .metric-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+        transform: translateY(-3px); /* More pronounced lift */
+        box-shadow: 0 6px 25px rgba(0,0,0,0.15); /* Stronger hover shadow */
     }
     
     .metric-value {
-        font-size: 2rem;
+        font-size: 2.2rem; /* Slightly larger */
         font-weight: 700;
         color: #1a202c;
         margin: 0.5rem 0;
@@ -115,16 +126,16 @@ st.markdown("""
     }
     
     .metric-label {
-        font-size: 0.875rem;
+        font-size: 0.9rem; /* Slightly larger */
         color: #718096;
-        font-weight: 500;
+        font-weight: 600; /* Bolder */
         text-transform: uppercase;
-        letter-spacing: 0.5px;
-        margin-bottom: 0.5rem;
+        letter-spacing: 0.7px; /* More spacing */
+        margin-bottom: 0.6rem;
     }
     
     .metric-subtitle {
-        font-size: 0.8rem;
+        font-size: 0.85rem; /* Slightly larger */
         color: #a0aec0;
         margin-top: 0.5rem;
     }
@@ -133,25 +144,26 @@ st.markdown("""
     .ai-insight {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         border: 2px solid #0ea5e9;
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin: 1rem 0;
-        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.1);
+        border-radius: 16px; /* More rounded */
+        padding: 2rem; /* Increased padding */
+        margin: 1.5rem 0; /* Increased margin */
+        box-shadow: 0 6px 25px rgba(14, 165, 233, 0.15); /* More pronounced shadow */
     }
     
     .ai-insight h4 {
         color: #0c4a6e;
-        margin-bottom: 1rem;
-        font-size: 1.25rem;
-        font-weight: 600;
+        margin-bottom: 1.2rem; /* Increased margin */
+        font-size: 1.4rem; /* Slightly larger */
+        font-weight: 700; /* Bolder */
     }
     
     /* Status cards */
     .status-card {
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-        border-left: 4px solid;
+        padding: 1.2rem; /* Increased padding */
+        border-radius: 10px; /* More rounded */
+        margin: 0.7rem 0; /* Increased margin */
+        border-left: 5px solid; /* Thicker border */
+        font-size: 0.95rem;
     }
     
     .status-success {
@@ -181,40 +193,46 @@ st.markdown("""
     /* Configuration section */
     .config-section {
         background: #f8fafc;
-        padding: 1.5rem;
-        border-radius: 10px;
+        padding: 2rem; /* Increased padding */
+        border-radius: 12px; /* More rounded */
         border: 1px solid #e2e8f0;
-        margin: 1rem 0;
+        margin: 1.5rem 0; /* Increased margin */
     }
     
     .config-header {
-        font-size: 1.1rem;
-        font-weight: 600;
+        font-size: 1.2rem; /* Slightly larger */
+        font-weight: 700; /* Bolder */
         color: #2d3748;
-        margin-bottom: 1rem;
+        margin-bottom: 1.2rem;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.75rem; /* More spacing */
     }
     
     /* Analysis cards */
     .analysis-card {
         background: white;
         border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 1.25rem;
-        box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-        height: 140px;
+        border-radius: 12px; /* More rounded */
+        padding: 1.5rem; /* Increased padding */
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06); /* Slightly more pronounced shadow */
+        height: 150px; /* Taller */
         display: flex;
         flex-direction: column;
         justify-content: center;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     
+    .analysis-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
     .analysis-card h6 {
         color: #2d3748;
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
+        font-size: 1.1rem; /* Slightly larger */
+        font-weight: 700; /* Bolder */
+        margin-bottom: 0.8rem;
         text-align: center;
     }
     
@@ -223,149 +241,208 @@ st.markdown("""
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        border-radius: 8px;
-        padding: 0.6rem 1.25rem;
-        font-weight: 500;
+        border-radius: 10px; /* More rounded */
+        padding: 0.8rem 1.5rem; /* Increased padding */
+        font-weight: 600; /* Bolder */
+        font-size: 1.05rem; /* Slightly larger text */
         transition: all 0.2s ease;
         width: 100%;
         font-family: inherit;
+        box-shadow: 0 4px 10px rgba(102, 126, 234, 0.2); /* Added shadow */
     }
     
     .stButton > button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        transform: translateY(-2px); /* More pronounced lift */
+        box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4); /* Stronger hover shadow */
     }
     
     /* Tab styling */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 0.25rem;
-        background: #f8fafc;
-        padding: 0.25rem;
-        border-radius: 8px;
+        gap: 0.5rem; /* Increased gap */
+        background: #f0f2f5; /* Lighter background for tabs */
+        padding: 0.4rem; /* Increased padding */
+        border-radius: 10px; /* More rounded */
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05); /* Inner shadow */
     }
     
     .stTabs [data-baseweb="tab"] {
         background: white;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        border: 1px solid #e2e8f0;
-        font-weight: 500;
+        border-radius: 8px; /* More rounded */
+        padding: 0.7rem 1.2rem; /* Increased padding */
+        border: 1px solid #d1d5db; /* Lighter border */
+        font-weight: 600; /* Bolder */
         color: #4a5568;
+        transition: all 0.2s ease;
     }
     
     .stTabs [aria-selected="true"] {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3); /* Shadow for active tab */
     }
     
     /* Footer styling */
     .footer-content {
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        padding: 2rem;
-        border-radius: 12px;
+        padding: 2.5rem; /* Increased padding */
+        border-radius: 16px; /* More rounded */
         text-align: center;
-        margin-top: 2rem;
+        margin-top: 3rem; /* Increased margin */
         border: 1px solid #e2e8f0;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.08);
     }
     
     .footer-content h3 {
         color: #2d3748;
-        margin-bottom: 1rem;
-        font-size: 1.5rem;
+        margin-bottom: 1.2rem;
+        font-size: 1.8rem; /* Slightly larger */
         font-weight: 700;
     }
     
     .feature-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1rem;
-        margin: 1.5rem 0;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); /* Adjusted minmax */
+        gap: 1.2rem; /* Increased gap */
+        margin: 1.8rem 0; /* Increased margin */
     }
     
     .feature-item {
         background: white;
-        padding: 1rem;
-        border-radius: 8px;
+        padding: 1.2rem; /* Increased padding */
+        border-radius: 10px; /* More rounded */
         border: 1px solid #e2e8f0;
-        font-weight: 500;
+        font-weight: 600; /* Bolder */
         color: #4a5568;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.05);
     }
     
     /* Dataframe styling */
-    .dataframe {
-        border-radius: 8px;
+    .stDataFrame {
+        border-radius: 10px; /* More rounded */
         overflow: hidden;
         border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
     
     /* Progress bar */
     .stProgress > div > div > div > div {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 5px; /* Rounded progress bar */
     }
     
     /* Sidebar improvements */
     .css-1d391kg { /* Target for Streamlit sidebar background */
         background: #f8fafc;
+        box-shadow: 2px 0 10px rgba(0,0,0,0.05); /* Added shadow to sidebar */
     }
     
     /* Text input improvements */
     .stTextInput > div > div > input {
         background: white;
         border: 1px solid #d1d5db;
-        border-radius: 6px;
-        padding: 0.5rem;
+        border-radius: 8px; /* More rounded */
+        padding: 0.6rem; /* Increased padding */
+        font-size: 1rem;
     }
     
     /* Selectbox improvements */
     .stSelectbox > div > div > div {
         background: white;
         border: 1px solid #d1d5db;
-        border-radius: 6px;
+        border-radius: 8px; /* More rounded */
+        padding: 0.4rem; /* Adjusted padding */
+        font-size: 1rem;
     }
     
     /* Number input improvements */
     .stNumberInput > div > div > input {
         background: white;
         border: 1px solid #d1d5db;
-        border-radius: 6px;
-        padding: 0.5rem;
+        border-radius: 8px; /* More rounded */
+        padding: 0.6rem; /* Increased padding */
+        font-size: 1rem;
     }
     
     /* File uploader improvements */
     .stFileUploader > div {
-        border: 2px dashed #d1d5db;
-        border-radius: 8px;
-        padding: 1rem;
+        border: 2px dashed #9ca3af; /* Darker dashed border */
+        border-radius: 10px; /* More rounded */
+        padding: 1.5rem; /* Increased padding */
         background: #f9fafb;
+        transition: all 0.2s ease;
     }
-    
+    .stFileUploader > div:hover {
+        border-color: #667eea; /* Color on hover */
+        background: #f5f8ff; /* Lighter background on hover */
+    }
+
     /* Metric improvements */
     .stMetric {
         background: white;
-        padding: 1rem;
-        border-radius: 8px;
+        padding: 1.5rem; /* Increased padding */
+        border-radius: 12px; /* More rounded */
         border: 1px solid #e2e8f0;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
-    
+
+    /* Expander improvements */
+    .stExpander {
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        margin-bottom: 0.75rem;
+    }
+    .stExpander > div > div > .streamlit-expanderContent {
+        padding: 1rem;
+    }
+    .stExpander > div > div > button {
+        background: linear-gradient(135deg, #f0f2f5 0%, #e2e8f0 100%); /* Light gradient for expander button */
+        border-bottom: 1px solid #d1d5db;
+        border-radius: 10px 10px 0 0;
+        padding: 0.75rem 1rem;
+        font-weight: 600;
+        color: #2d3748;
+    }
+    .stExpander > div > div > button:hover {
+        background: linear-gradient(135deg, #e0e2e5 0%, #d1d5db 100%);
+    }
+
     /* Responsive design */
     @media (max-width: 768px) {
+        .main-header {
+            padding: 1.5rem;
+        }
         .main-header h1 {
             font-size: 2rem;
         }
-        
         .main-header p {
             font-size: 1rem;
         }
-        
         .metric-card {
             padding: 1rem;
             height: auto;
+            margin-bottom: 1rem; /* Add margin for stacking */
         }
-        
+        .metric-value {
+            font-size: 1.8rem;
+        }
         .feature-grid {
             grid-template-columns: 1fr;
+        }
+        .stTabs [data-baseweb="tab-list"] {
+            flex-direction: column; /* Stack tabs vertically on mobile */
+            gap: 0.25rem;
+        }
+        .stTabs [data-baseweb="tab"] {
+            width: 100%;
+        }
+        .config-section {
+            padding: 1.2rem;
+        }
+        .analysis-card {
+            height: auto; /* Auto height on small screens */
+            margin-bottom: 1rem;
         }
     }
 </style>
