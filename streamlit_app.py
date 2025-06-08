@@ -1561,7 +1561,7 @@ def main():
     # Header
     st.markdown("""
     <div class="main-header">
-        <div class="ai-badge">🤖 Powered by Claude AI</div>
+        <div class="ai-badge">🤖 Powered by AI </div>
         <h1>AI Database Migration Studio</h1>
         <p>Enterprise database migration planning with intelligent recommendations, cost optimization, and risk assessment powered by advanced AI analytics</p>
     </div>
