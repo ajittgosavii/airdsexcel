@@ -51,7 +51,7 @@ if not CLIENT_ID or not CLIENT_SECRET or not REDIRECT_URI:
 oauth2 = OAuth2Component( # This line was changed from OAuth2 to OAuth2Component
     client_id=CLIENT_ID,
     client_secret=CLIENT_SECRET,
-    redirect_uri=REDIRECT_URI,
+    #redirect_uri=REDIRECT_URI,
     authorize_endpoint=AUTHORIZE_URL,
     token_endpoint=TOKEN_URL,
     #scope=["openid", "email", "profile"], # Required scopes for Google
