@@ -40,6 +40,7 @@ st.markdown("""
         padding-top: 1rem;
         padding-bottom: 2rem;
         max-width: 95%;
+        margin: 0 auto; /* Added to center the content block */
     }
     
     /* Header styling */
@@ -1967,7 +1968,7 @@ def render_cost_analysis_tab(recommendations, inputs):
     with savings_cols[2]:
         st.metric("Monthly Savings", f"${monthly_savings:,.0f}", delta=f"{(monthly_savings/onprem_monthly)*100:.0f}%")
     with savings_cols[3]:
-        payback_months = (total_monthly * 0.1) / (total_savings / 12) if total_savings > 0 else 0
+        payback_months = (cloud_monthly * 0.1) / (monthly_savings / 12) if monthly_savings > 0 else 0
         st.metric("ROI Payback", f"{payback_months:.0f} months" if payback_months > 0 else "Immediate")
     
     # 3-year projection
@@ -2060,9 +2061,9 @@ def render_future_planning_tab(ai_insights, recommendations, inputs):
                 st.markdown(f"""
                 <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); 
                             border-left: 4px solid #0ea5e9; padding: 1rem; margin: 0.5rem 0; border-radius: 0 8px 8px 0;">
-                    <strong>{i}.</strong> {rec}
-                </div>
-                """, unsafe_allow_html=True)
+                        <strong>{i}.</strong> {rec}
+                    </div>
+                    """, unsafe_allow_html=True)
         
         # Confidence and factors
         confidence_cols = st.columns(2)
