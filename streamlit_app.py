@@ -900,13 +900,17 @@ def analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_mi
         st.error(f"Analysis failed: {str(e)}")
 
 def display_file_results(all_results):
-    """Display results from file analysis"""
-    st.subheader("📊 Multi-Database Analysis Results")
+    """Display results from file analysis with professional layout"""
+    st.subheader("📊 Multi-Database Migration Analysis")
+    
+    # Executive Dashboard
+    st.markdown("### 📈 Executive Dashboard")
     
     # Summary metrics
     total_monthly = sum(result['recommendations']['PROD']['monthly_cost'] for result in all_results)
     total_annual = sum(result['recommendations']['PROD']['annual_cost'] for result in all_results)
     avg_monthly = total_monthly / len(all_results)
+    avg_optimization = sum(result['recommendations']['PROD'].get('optimization_score', 85) for result in all_results) / len(all_results)
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -914,150 +918,517 @@ def display_file_results(all_results):
     with col2:
         st.metric("Total Monthly Cost", f"${total_monthly:,.0f}")
     with col3:
-        st.metric("Total Annual Cost", f"${total_annual:,.0f}")
-    with col4:
         st.metric("Average per Database", f"${avg_monthly:,.0f}/mo")
+    with col4:
+        st.metric("Avg Optimization Score", f"{avg_optimization:.0f}%")
     
-    # Summary table
-    summary_data = []
-    for result in all_results:
-        prod_rec = result['recommendations']['PROD']
-        summary_data.append({
-            "Database": result['inputs'].get('db_name', 'N/A'),
-            "Engine": result['inputs'].get('engine', 'N/A'),
-            "Instance Type": prod_rec['instance_type'],
-            "vCPUs": prod_rec['vcpus'],
-            "RAM (GB)": prod_rec['ram_gb'],
-            "Storage (GB)": prod_rec['storage_gb'],
-            "Monthly Cost": prod_rec['monthly_cost'],
-            "Annual Cost": prod_rec['annual_cost'],
-            "Optimization Score": f"{prod_rec.get('optimization_score', 85)}%"
-        })
+    # Create main analysis tabs
+    analysis_tabs = st.tabs([
+        "📋 Summary Table", 
+        "🤖 AI Intelligence", 
+        "💰 Cost Analysis", 
+        "🔍 Individual Analysis",
+        "📄 Export Reports"
+    ])
     
-    summary_df = pd.DataFrame(summary_data)
-    
-    # Display summary table
-    st.markdown("#### 📋 Executive Summary")
-    st.dataframe(
-        summary_df,
-        column_config={
-            "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f"),
-            "Annual Cost": st.column_config.NumberColumn("Annual Cost", format="$%.0f")
-        },
-        use_container_width=True,
-        hide_index=True
-    )
-    
-    # AI Insights Section for Multiple Databases
-    if any(result.get('ai_insights') for result in all_results):
-        st.subheader("🤖 AI Analysis Summary")
+    with analysis_tabs[0]:  # Summary Table
+        st.markdown("#### 📊 Database Configuration Summary")
         
-        # Aggregate AI insights
-        workload_types = {}
-        complexity_levels = {}
-        common_recommendations = []
-        
+        summary_data = []
         for result in all_results:
-            ai_insights = result.get('ai_insights', {})
-            if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
-                workload = ai_insights['workload']
-                
-                # Count workload types
-                wtype = workload.get('workload_type', 'Unknown')
-                workload_types[wtype] = workload_types.get(wtype, 0) + 1
-                
-                # Count complexity levels
-                complexity = workload.get('complexity', 'Unknown')
-                complexity_levels[complexity] = complexity_levels.get(complexity, 0) + 1
-                
-                # Collect recommendations
-                common_recommendations.extend(workload.get('recommendations', []))
+            prod_rec = result['recommendations']['PROD']
+            summary_data.append({
+                "Database": result['inputs'].get('db_name', 'N/A'),
+                "Engine": result['inputs'].get('engine', 'N/A'),
+                "Instance Type": prod_rec['instance_type'],
+                "vCPUs": prod_rec['vcpus'],
+                "RAM (GB)": prod_rec['ram_gb'],
+                "Storage (GB)": prod_rec['storage_gb'],
+                "Monthly Cost": prod_rec['monthly_cost'],
+                "Annual Cost": prod_rec['annual_cost'],
+                "Optimization": f"{prod_rec.get('optimization_score', 85)}%"
+            })
         
-        # Display aggregated insights
+        summary_df = pd.DataFrame(summary_data)
+        
+        st.dataframe(
+            summary_df,
+            column_config={
+                "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f"),
+                "Annual Cost": st.column_config.NumberColumn("Annual Cost", format="$%.0f"),
+                "Optimization": st.column_config.TextColumn("Optimization Score")
+            },
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Quick stats
+        st.markdown("#### 📈 Quick Statistics")
         col1, col2 = st.columns(2)
         
         with col1:
-            st.markdown("#### 📊 Workload Distribution")
-            if workload_types:
-                for wtype, count in workload_types.items():
-                    percentage = (count / len(all_results)) * 100
-                    st.write(f"• **{wtype}**: {count} databases ({percentage:.1f}%)")
+            engine_counts = {}
+            for result in all_results:
+                engine = result['inputs'].get('engine', 'Unknown')
+                engine_counts[engine] = engine_counts.get(engine, 0) + 1
+            
+            st.markdown("**Database Engines:**")
+            for engine, count in engine_counts.items():
+                percentage = (count / len(all_results)) * 100
+                st.write(f"• {engine}: {count} databases ({percentage:.1f}%)")
         
         with col2:
-            st.markdown("#### ⚡ Complexity Analysis")
-            if complexity_levels:
-                for complexity, count in complexity_levels.items():
-                    percentage = (count / len(all_results)) * 100
-                    st.write(f"• **{complexity}**: {count} databases ({percentage:.1f}%)")
-        
-        # Common recommendations
-        if common_recommendations:
-            st.markdown("#### 🎯 Most Common AI Recommendations")
-            from collections import Counter
-            rec_counts = Counter(common_recommendations)
-            for rec, count in rec_counts.most_common(5):
+            region_counts = {}
+            for result in all_results:
+                region = result['inputs'].get('region', 'Unknown')
+                region_counts[region] = region_counts.get(region, 0) + 1
+            
+            st.markdown("**AWS Regions:**")
+            for region, count in region_counts.items():
                 percentage = (count / len(all_results)) * 100
-                st.write(f"• **{rec}** (mentioned for {count} databases - {percentage:.1f}%)")
+                st.write(f"• {region}: {count} databases ({percentage:.1f}%)")
     
-    # Detailed Individual Analysis
-    st.subheader("🔍 Individual Database Analysis")
-    
-    # Create tabs for each database
-    db_names = [result['inputs'].get('db_name', f'Database {i+1}') for i, result in enumerate(all_results)]
-    
-    # Limit tabs to prevent UI issues
-    if len(db_names) <= 10:
-        tabs = st.tabs(db_names)
+    with analysis_tabs[1]:  # AI Intelligence
+        st.markdown("#### 🤖 AI-Powered Migration Intelligence")
         
-        for i, (tab, result) in enumerate(zip(tabs, all_results)):
-            with tab:
-                display_single_database_analysis(result, i+1)
-    else:
-        # For more than 10 databases, use selectbox
-        selected_db = st.selectbox(
-            "Select database to view detailed analysis:",
-            options=list(range(len(all_results))),
-            format_func=lambda x: db_names[x]
-        )
+        # Check if AI analysis is available
+        ai_available = any(result.get('ai_insights') for result in all_results)
         
-        if selected_db is not None:
-            st.markdown(f"### Analysis for {db_names[selected_db]}")
-            display_single_database_analysis(all_results[selected_db], selected_db + 1)
-    
-    # Cost comparison charts
-    st.subheader("💰 Cost Analysis & Comparisons")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        # Database costs comparison
-        db_costs = [result['recommendations']['PROD']['monthly_cost'] for result in all_results]
-        db_names_short = [name[:15] + "..." if len(name) > 15 else name for name in db_names]
-        
-        fig1 = px.bar(
-            x=db_names_short,
-            y=db_costs,
-            title="Monthly Cost by Database",
-            labels={'x': 'Database', 'y': 'Monthly Cost ($)'},
-            text=[f'${cost:,.0f}' for cost in db_costs]
-        )
-        fig1.update_traces(textposition='outside')
-        fig1.update_layout(xaxis_tickangle=-45, height=400)
-        st.plotly_chart(fig1, use_container_width=True)
-    
-    with col2:
-        # Engine type distribution
-        engine_costs = {}
-        for result in all_results:
-            engine = result['inputs'].get('engine', 'Unknown')
-            cost = result['recommendations']['PROD']['monthly_cost']
-            if engine in engine_costs:
-                engine_costs[engine] += cost
+        if not ai_available:
+            st.info("🔑 AI analysis requires a Claude API key. Enter your API key in the sidebar and re-run the analysis to see AI insights.")
+        else:
+            # Aggregate AI insights
+            workload_types = {}
+            complexity_levels = {}
+            common_recommendations = []
+            migration_timelines = []
+            
+            for result in all_results:
+                ai_insights = result.get('ai_insights', {})
+                if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
+                    workload = ai_insights['workload']
+                    
+                    # Count workload types
+                    wtype = workload.get('workload_type', 'Unknown')
+                    workload_types[wtype] = workload_types.get(wtype, 0) + 1
+                    
+                    # Count complexity levels
+                    complexity = workload.get('complexity', 'Unknown')
+                    complexity_levels[complexity] = complexity_levels.get(complexity, 0) + 1
+                    
+                    # Collect recommendations
+                    common_recommendations.extend(workload.get('recommendations', []))
+                    
+                    # Collect timelines
+                    timeline = workload.get('timeline', '')
+                    if timeline:
+                        migration_timelines.append(timeline)
+            
+            # Display AI intelligence
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("##### 📊 Workload Intelligence")
+                if workload_types:
+                    # Create workload distribution chart
+                    fig_workload = px.pie(
+                        values=list(workload_types.values()),
+                        names=list(workload_types.keys()),
+                        title="Workload Type Distribution"
+                    )
+                    fig_workload.update_traces(textposition='inside', textinfo='percent+label')
+                    fig_workload.update_layout(height=300)
+                    st.plotly_chart(fig_workload, use_container_width=True)
+                
+                st.markdown("##### ⚡ Complexity Assessment")
+                if complexity_levels:
+                    for complexity, count in complexity_levels.items():
+                        percentage = (count / len(all_results)) * 100
+                        if complexity == "High":
+                            st.error(f"🔴 **{complexity}**: {count} databases ({percentage:.1f}%)")
+                        elif complexity == "Medium":
+                            st.warning(f"🟡 **{complexity}**: {count} databases ({percentage:.1f}%)")
+                        else:
+                            st.success(f"🟢 **{complexity}**: {count} databases ({percentage:.1f}%)")
+            
+            with col2:
+                st.markdown("##### 🎯 AI Recommendations")
+                if common_recommendations:
+                    from collections import Counter
+                    rec_counts = Counter(common_recommendations)
+                    
+                    st.markdown("**Most Frequent Recommendations:**")
+                    for rec, count in rec_counts.most_common(5):
+                        percentage = (count / len(all_results)) * 100
+                        st.write(f"• {rec}")
+                        st.caption(f"   Recommended for {count} databases ({percentage:.1f}%)")
+                
+                st.markdown("##### ⏱️ Migration Timeline Analysis")
+                if migration_timelines:
+                    unique_timelines = list(set(migration_timelines))
+                    st.write("**Estimated Migration Timelines:**")
+                    for timeline in unique_timelines:
+                        count = migration_timelines.count(timeline)
+                        percentage = (count / len(migration_timelines)) * 100
+                        st.write(f"• {timeline}: {count} databases ({percentage:.1f}%)")
+            
+            # Strategic recommendations
+            st.markdown("##### 🎯 Strategic Migration Recommendations")
+            
+            strategic_insights = []
+            if workload_types.get('OLTP', 0) > len(all_results) * 0.6:
+                strategic_insights.append("🏢 **OLTP-Heavy Portfolio**: Consider Aurora for better OLTP performance and cost optimization")
+            
+            if complexity_levels.get('High', 0) > 0:
+                strategic_insights.append("⚠️ **Complex Migrations Detected**: Recommend phased migration approach with extensive testing")
+            
+            if len(set(result['inputs'].get('region') for result in all_results)) > 3:
+                strategic_insights.append("🌍 **Multi-Region Setup**: Consider regional data compliance and cross-region costs")
+            
+            total_cost_millions = total_annual / 1000000
+            if total_cost_millions > 1:
+                strategic_insights.append(f"💰 **High-Value Migration**: ${total_cost_millions:.1f}M annual cost - consider Enterprise Support and Professional Services")
+            
+            if strategic_insights:
+                for insight in strategic_insights:
+                    st.info(insight)
             else:
-                engine_costs[engine] = cost
+                st.success("✅ **Well-Balanced Portfolio**: Standard migration practices should be sufficient")
+    
+    with analysis_tabs[2]:  # Cost Analysis
+        st.markdown("#### 💰 Comprehensive Cost Analysis")
         
-        fig2 = px.pie(
-            values=list(engine_costs.values()),
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            # Database costs comparison
+            db_costs = [result['recommendations']['PROD']['monthly_cost'] for result in all_results]
+            db_names = [result['inputs'].get('db_name', f'DB{i+1}') for i, result in enumerate(all_results)]
+            db_names_short = [name[:12] + "..." if len(name) > 12 else name for name in db_names]
+            
+            fig1 = px.bar(
+                x=db_names_short,
+                y=db_costs,
+                title="Monthly Cost by Database",
+                labels={'x': 'Database', 'y': 'Monthly Cost ($)'},
+                text=[f'${cost:,.0f}' for cost in db_costs],
+                color=db_costs,
+                color_continuous_scale='RdYlBu_r'
+            )
+            fig1.update_traces(textposition='outside')
+            fig1.update_layout(xaxis_tickangle=-45, height=400, showlegend=False)
+            st.plotly_chart(fig1, use_container_width=True)
+        
+        with col2:
+            # Engine cost distribution
+            engine_costs = {}
+            for result in all_results:
+                engine = result['inputs'].get('engine', 'Unknown')
+                cost = result['recommendations']['PROD']['monthly_cost']
+                if engine in engine_costs:
+                    engine_costs[engine] += cost
+                else:
+                    engine_costs[engine] = cost
+            
+            # The display_file_results function is now complete above    values=list(engine_costs.values()),
+                names=list(engine_costs.keys()),
+                title="Total Monthly Cost by Engine"
+            )
+            fig2.update_traces(textposition='inside', textinfo='percent+label')
+            fig2.update_layout(height=400)
+            st.plotly_chart(fig2, use_container_width=True)
+        
+        # Cost efficiency analysis
+        st.markdown("##### 📊 Cost Efficiency Analysis")
+        
+        efficiency_data = []
+        for result in all_results:
+            prod_rec = result['recommendations']['PROD']
+            inputs = result['inputs']
+            
+            # Calculate cost per core and per GB
+            cost_per_core = prod_rec['monthly_cost'] / max(inputs.get('cores', 1), 1)
+            cost_per_gb_ram = prod_rec['monthly_cost'] / max(inputs.get('ram', 1), 1)
+            
+            efficiency_data.append({
+                "Database": inputs.get('db_name', 'N/A'),
+                "Engine": inputs.get('engine', 'N/A'),
+                "Cost/Core": cost_per_core,
+                "Cost/GB RAM": cost_per_gb_ram,
+                "Optimization Score": prod_rec.get('optimization_score', 85)
+            })
+        
+        efficiency_df = pd.DataFrame(efficiency_data)
+        st.dataframe(
+            efficiency_df,
+            column_config={
+                "Cost/Core": st.column_config.NumberColumn("Cost per Core", format="$%.2f"),
+                "Cost/GB RAM": st.column_config.NumberColumn("Cost per GB RAM", format="$%.2f"),
+                "Optimization Score": st.column_config.NumberColumn("Optimization Score", format="%.0f%%")
+            },
+            use_container_width=True,
+            hide_index=True
+        )
+    
+    with analysis_tabs[3]:  # Individual Analysis
+        st.markdown("#### 🔍 Individual Database Deep Dive")
+        
+        # Database selector
+        db_names = [result['inputs'].get('db_name', f'Database {i+1}') for i, result in enumerate(all_results)]
+        selected_db_idx = st.selectbox(
+            "Select database for detailed analysis:",
+            options=list(range(len(all_results))),
+            format_func=lambda x: f"{db_names[x]} ({all_results[x]['inputs'].get('engine', 'Unknown')})"
+        )
+        
+        if selected_db_idx is not None:
+            selected_result = all_results[selected_db_idx]
+            
+            st.markdown(f"### 📋 Analysis for {db_names[selected_db_idx]}")
+            display_single_database_analysis(selected_result, selected_db_idx + 1)
+    
+    with analysis_tabs[4]:  # Export Reports
+        st.markdown("#### 📄 Export & Download Options")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("##### 📊 Executive Report")
+            if st.button("📈 Generate Executive Summary", use_container_width=True):
+                try:
+                    excel_data = export_full_report(all_results)
+                    st.download_button(
+                        label="Download Executive Excel Report",
+                        data=excel_data,
+                        file_name=f"executive_migration_report_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+                    st.success("✅ Executive report generated!")
+                except Exception as e:
+                    st.error(f"Export failed: {str(e)}")
+        
+        with col2:
+            st.markdown("##### 📋 Data Exports")
+            
+            # CSV export
+            csv_data = summary_df.to_csv(index=False)
+            st.download_button(
+                label="📄 Download Summary CSV",
+                data=csv_data,
+                file_name=f"migration_summary_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+            
+            # JSON export
+            json_data = json.dumps(all_results, indent=2, default=str)
+            st.download_button(
+                label="🔧 Download Technical JSON",
+                data=json_data,
+                file_name=f"migration_technical_{datetime.now().strftime('%Y%m%d_%H%M')}.json",
+                mime="application/json",
+                use_container_width=True
+            )
+        
+        with col3:
+            st.markdown("##### 🎯 Quick Actions")
+            
+            if st.button("📧 Generate Email Summary", use_container_width=True):
+                # Generate email-friendly summary
+                email_summary = f"""
+Migration Analysis Summary - {datetime.now().strftime('%Y-%m-%d')}
+
+Executive Summary:
+• Total Databases Analyzed: {len(all_results)}
+• Total Monthly Cost: ${total_monthly:,.0f}
+• Total Annual Cost: ${total_annual:,.0f}
+• Average Cost per Database: ${avg_monthly:,.0f}/month
+
+Top Recommendations:
+• Proceed with cloud migration for cost optimization
+• Estimated annual savings vs on-premise: ${total_monthly * 12 * 0.3:,.0f}
+• Recommended timeline: 12-18 weeks for phased migration
+
+Next Steps:
+1. Review detailed analysis report
+2. Plan migration phases
+3. Engage AWS Professional Services if needed
+                """
+                
+                st.text_area("Email Summary (Copy & Paste):", email_summary, height=300)
+            
+            st.info("💡 **Pro Tip:** Use the Executive Excel Report for stakeholder presentations and the Technical JSON for development teams.")
+
+def display_single_database_analysis(result, db_number):
+    """Display detailed analysis for a single database with proper formatting"""
+    inputs = result['inputs']
+    recommendations = result['recommendations']
+    ai_insights = result.get('ai_insights', {})
+    
+    # Create sub-tabs for different aspects
+    detail_tabs = st.tabs(["📊 Configuration", "🏗️ Recommendations", "🤖 AI Analysis", "💰 Cost Breakdown"])
+    
+    with detail_tabs[0]:  # Configuration
+        st.markdown("##### 🖥️ Current Configuration")
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Database Engine", inputs.get('engine', 'Unknown'))
+            st.metric("CPU Cores", inputs.get('cores', 'N/A'))
+            st.metric("CPU Utilization", f"{inputs.get('cpu_util', 0)}%")
+        with col2:
+            st.metric("AWS Region", inputs.get('region', 'Unknown'))
+            st.metric("RAM (GB)", inputs.get('ram', 'N/A'))
+            st.metric("RAM Utilization", f"{inputs.get('ram_util', 0)}%")
+        with col3:
+            st.metric("Storage (GB)", f"{inputs.get('storage', 0):,}")
+            st.metric("IOPS", f"{inputs.get('iops', 0):,}")
+            st.metric("Growth Rate", f"{inputs.get('growth', 0)}%")
+    
+    with detail_tabs[1]:  # Recommendations
+        st.markdown("##### 🏗️ Environment Recommendations")
+        
+        env_data = []
+        for env, rec in recommendations.items():
+            env_data.append({
+                'Environment': env,
+                'Instance Type': rec['instance_type'],
+                'vCPUs': rec['vcpus'],
+                'RAM (GB)': rec['ram_gb'],
+                'Storage (GB)': rec['storage_gb'],
+                'Monthly Cost': rec['monthly_cost'],
+                'Optimization': f"{rec.get('optimization_score', 85)}%"
+            })
+        
+        env_df = pd.DataFrame(env_data)
+        st.dataframe(
+            env_df,
+            column_config={
+                "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.0f")
+            },
+            use_container_width=True,
+            hide_index=True
+        )
+        
+        # Highlight production recommendation
+        prod_rec = recommendations['PROD']
+        st.info(f"🎯 **Production Recommendation:** {prod_rec['instance_type']} at ${prod_rec['monthly_cost']:,.0f}/month with {prod_rec.get('optimization_score', 85)}% optimization score")
+    
+    with detail_tabs[2]:  # AI Analysis
+        if ai_insights:
+            st.markdown("##### 🤖 AI-Generated Insights")
+            
+            # Workload analysis
+            if 'workload' in ai_insights and 'error' not in ai_insights['workload']:
+                workload = ai_insights['workload']
+                
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown(f"""
+                    <div class="ai-insight">
+                        <h6>🔍 Workload Classification</h6>
+                        <p><strong>Type:</strong> {workload.get('workload_type', 'Mixed')}</p>
+                        <p><strong>Complexity:</strong> {workload.get('complexity', 'Medium')}</p>
+                        <p><strong>Timeline:</strong> {workload.get('timeline', '12-16 weeks')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with col2:
+                    if workload.get('recommendations'):
+                        st.markdown("###### 🎯 AI Recommendations")
+                        for i, rec in enumerate(workload['recommendations'][:4], 1):
+                            st.write(f"{i}. {rec}")
+                
+                # Migration strategy
+                if 'migration' in ai_insights and 'error' not in ai_insights['migration']:
+                    migration = ai_insights['migration']
+                    
+                    st.markdown("###### 🚀 Migration Strategy")
+                    col1, col2 = st.columns(2)
+                    
+                    with col1:
+                        st.write(f"**Estimated Timeline:** {migration.get('timeline', '14-18 weeks')}")
+                        st.write("**Key Migration Phases:**")
+                        for i, phase in enumerate(migration.get('phases', [])[:4], 1):
+                            st.write(f"{i}. {phase}")
+                    
+                    with col2:
+                        st.write("**Required Resources:**")
+                        for resource in migration.get('resources', [])[:4]:
+                            st.write(f"• {resource}")
+            else:
+                st.info("🔑 AI analysis not available. Enter Claude API key to enable AI insights.")
+        else:
+            st.info("🔑 AI analysis requires Claude API key. Configure in sidebar to see detailed insights.")
+    
+    with detail_tabs[3]:  # Cost Breakdown
+        st.markdown("##### 💰 Detailed Cost Analysis")
+        
+        prod_rec = recommendations['PROD']
+        cost_breakdown = prod_rec.get('cost_breakdown', {})
+        
+        if cost_breakdown:
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                # Cost breakdown chart
+                labels = list(cost_breakdown.keys())
+                values = list(cost_breakdown.values())
+                
+                fig = px.pie(
+                    values=values,
+                    names=labels,
+                    title="Monthly Cost Breakdown"
+                )
+                fig.update_traces(textposition='inside', textinfo='percent+label')
+                fig.update_layout(height=300)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                # Cost details table
+                cost_details = []
+                for component, cost in cost_breakdown.items():
+                    percentage = (cost / cost_breakdown['total']) * 100
+                    cost_details.append({
+                        "Component": component.replace('_', ' ').title(),
+                        "Monthly Cost": cost,
+                        "Percentage": f"{percentage:.1f}%"
+                    })
+                
+                cost_df = pd.DataFrame(cost_details)
+                st.dataframe(
+                    cost_df,
+                    column_config={
+                        "Monthly Cost": st.column_config.NumberColumn("Monthly Cost", format="$%.2f")
+                    },
+                    use_container_width=True,
+                    hide_index=True
+                )
+        
+        # Annual projection
+        annual_cost = prod_rec['annual_cost']
+        growth_rate = inputs.get('growth', 0)
+        
+        st.markdown("###### 📈 3-Year Cost Projection")
+        projection_data = []
+        for year in range(1, 4):
+            yearly_cost = annual_cost * ((1 + growth_rate/100) ** (year-1))
+            projection_data.append({
+                "Year": year,
+                "Annual Cost": yearly_cost
+            })
+        
+        proj_df = pd.DataFrame(projection_data)
+        fig_proj = px.line(
+            proj_df,
+            x='Year',
+            y='Annual Cost',
+            title=f"3-Year Cost Projection ({growth_rate}% annual growth)",
+            markers=True
+        )
+        fig_proj.update_layout(height=300)
+        st.plotly_chart(fig_proj, use_container_width=True)values=list(engine_costs.values()),
             names=list(engine_costs.keys()),
             title="Total Cost by Database Engine"
         )
