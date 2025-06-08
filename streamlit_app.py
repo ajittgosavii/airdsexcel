@@ -1443,7 +1443,7 @@ def process_bulk_upload(uploaded_file, enable_ai_analysis, enable_predictions, e
             st.markdown("</div>", unsafe_allow_html=True) # Close the centering div
 
             # The status of AI features, now separate from the button's centering logic
-            st.markdown("""
+            st.markdown(f"""
             <div style="margin-top: 1rem; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
                 <strong>Analysis Settings:</strong><br>
                 <ul>
@@ -1452,7 +1452,7 @@ def process_bulk_upload(uploaded_file, enable_ai_analysis, enable_predictions, e
                     <li>• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}</li>
                 </ul>
             </div>
-            """.format(enable_ai_analysis=enable_ai_analysis, enable_predictions=enable_predictions, enable_migration_strategy=enable_migration_strategy), unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
 
 
         else:
@@ -2115,7 +2115,7 @@ def render_cost_analysis_tab(recommendations, inputs):
         st.metric("ROI Payback", f"{payback_months:.0f} months" if payback_months > 0 else "Immediate")
     
     # 3-year projection
-    st.markdown("##### 📈 3-Year Cost Projection")
+    st.markdown("##### � 3-Year Cost Projection")
     
     years = list(range(1, 4))
     growth_rate = inputs.get('growth', 15) / 100
