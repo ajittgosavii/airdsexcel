@@ -18,139 +18,131 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Enhanced CSS for modern, professional styling with proper layout fixes
+# Fixed CSS for proper layout and styling
 st.markdown("""
 <style>
+    /* Import better fonts */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
     /* Reset and base styles */
-    * {
-        box-sizing: border-box;
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
     }
     
     /* Hide Streamlit default elements */
     #MainMenu {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
+    .stDeployButton {display: none;}
     
-    /* Fix main container layout issues */
+    /* Main container fixes */
     .main .block-container {
         padding-top: 1rem;
-        padding-bottom: 1rem;
-        max-width: 100%;
-        margin: 0 auto;
+        padding-bottom: 2rem;
+        max-width: 95%;
     }
     
-    /* Fix content alignment */
-    .stApp {
-        padding: 0;
-        margin: 0;
-    }
-    
-    /* Ensure full width usage */
-    .stContainer {
-        width: 100%;
-        margin: 0;
-    }
-    
-    /* Header styling with proper containment */
+    /* Header styling */
     .main-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 1.5rem 1rem;
-        border-radius: 10px;
+        padding: 2rem;
+        border-radius: 12px;
         text-align: center;
         color: white;
-        margin: 0 0 1.5rem 0;
-        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-        width: 100%;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
     }
     
     .ai-badge {
-        background: rgba(255,255,255,0.25);
+        background: rgba(255,255,255,0.2);
         padding: 0.5rem 1rem;
         border-radius: 20px;
         display: inline-block;
-        margin-bottom: 0.5rem;
-        font-size: 0.85rem;
-        font-weight: 600;
+        margin-bottom: 1rem;
+        font-size: 0.9rem;
+        font-weight: 500;
     }
     
     .main-header h1 {
-        font-size: 1.8rem;
+        font-size: 2.5rem;
         font-weight: 700;
-        margin: 0.5rem 0;
+        margin: 1rem 0;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
     
     .main-header p {
-        font-size: 1rem;
+        font-size: 1.1rem;
         opacity: 0.9;
-        max-width: 800px;
-        margin: 0 auto;
+        margin: 0;
         line-height: 1.5;
     }
     
-    /* Metric cards with proper spacing */
+    /* Metric cards */
     .metric-card {
         background: white;
-        padding: 1rem;
+        padding: 1.5rem;
         border-radius: 10px;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         border: 1px solid #e2e8f0;
-        margin-bottom: 1rem;
         text-align: center;
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        width: 100%;
+        transition: transform 0.2s ease;
+        height: 120px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
     }
     
     .metric-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        box-shadow: 0 4px 20px rgba(0,0,0,0.12);
     }
     
     .metric-value {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: 700;
         color: #1a202c;
-        margin: 0.25rem 0;
+        margin: 0.5rem 0;
+        line-height: 1;
     }
     
     .metric-label {
-        font-size: 0.85rem;
+        font-size: 0.875rem;
         color: #718096;
         font-weight: 500;
         text-transform: uppercase;
         letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
     }
     
     .metric-subtitle {
         font-size: 0.8rem;
         color: #a0aec0;
-        margin-top: 0.25rem;
+        margin-top: 0.5rem;
     }
     
-    /* AI insight cards with proper containment */
+    /* AI insight cards */
     .ai-insight {
         background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
         border: 2px solid #0ea5e9;
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
-        box-shadow: 0 3px 10px rgba(14, 165, 233, 0.1);
-        width: 100%;
+        box-shadow: 0 4px 20px rgba(14, 165, 233, 0.1);
     }
     
     .ai-insight h4 {
         color: #0c4a6e;
-        margin-bottom: 0.75rem;
-        font-size: 1.1rem;
+        margin-bottom: 1rem;
+        font-size: 1.25rem;
         font-weight: 600;
     }
     
-    /* Status cards with proper width */
+    /* Status cards */
     .status-card {
         padding: 1rem;
-        border-radius: 10px;
-        margin: 0.75rem 0;
+        border-radius: 8px;
+        margin: 0.5rem 0;
         border-left: 4px solid;
-        width: 100%;
     }
     
     .status-success {
@@ -177,33 +169,70 @@ st.markdown("""
         color: #2a4365;
     }
     
-    /* Configuration section with proper containment */
+    /* Configuration section */
     .config-section {
         background: #f8fafc;
         padding: 1.5rem;
         border-radius: 10px;
         border: 1px solid #e2e8f0;
-        margin: 0.75rem 0;
-        width: 100%;
+        margin: 1rem 0;
     }
     
     .config-header {
         font-size: 1.1rem;
         font-weight: 600;
         color: #2d3748;
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem;
         display: flex;
         align-items: center;
         gap: 0.5rem;
     }
     
-    /* Tab styling fixes */
+    /* Analysis cards */
+    .analysis-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 1.25rem;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+        height: 140px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    
+    .analysis-card h6 {
+        color: #2d3748;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        text-align: center;
+    }
+    
+    /* Button fixes */
+    .stButton > button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        padding: 0.6rem 1.25rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        width: 100%;
+        font-family: inherit;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    }
+    
+    /* Tab styling */
     .stTabs [data-baseweb="tab-list"] {
         gap: 0.25rem;
         background: #f8fafc;
         padding: 0.25rem;
         border-radius: 8px;
-        width: 100%;
     }
     
     .stTabs [data-baseweb="tab"] {
@@ -212,7 +241,7 @@ st.markdown("""
         padding: 0.5rem 1rem;
         border: 1px solid #e2e8f0;
         font-weight: 500;
-        font-size: 0.9rem;
+        color: #4a5568;
     }
     
     .stTabs [aria-selected="true"] {
@@ -221,31 +250,28 @@ st.markdown("""
         border: none;
     }
     
-    /* Footer styling with proper containment */
+    /* Footer styling */
     .footer-content {
         background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-        padding: 1.5rem;
+        padding: 2rem;
         border-radius: 12px;
         text-align: center;
         margin-top: 2rem;
         border: 1px solid #e2e8f0;
-        width: 100%;
     }
     
     .footer-content h3 {
         color: #2d3748;
-        margin-bottom: 0.75rem;
-        font-size: 1.4rem;
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
         font-weight: 700;
     }
     
     .feature-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-        gap: 0.75rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
         margin: 1.5rem 0;
-        text-align: center;
-        width: 100%;
     }
     
     .feature-item {
@@ -255,131 +281,87 @@ st.markdown("""
         border: 1px solid #e2e8f0;
         font-weight: 500;
         color: #4a5568;
-        font-size: 0.9rem;
     }
     
-    /* Analysis grid with proper responsive layout */
-    .analysis-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
-        margin: 1rem 0;
-        width: 100%;
-    }
-    
-    .analysis-card {
-        background: white;
+    /* Dataframe styling */
+    .dataframe {
+        border-radius: 8px;
+        overflow: hidden;
         border: 1px solid #e2e8f0;
-        border-radius: 10px;
-        padding: 1rem;
-        box-shadow: 0 1px 5px rgba(0,0,0,0.05);
-        width: 100%;
     }
     
-    .analysis-card h6 {
-        color: #2d3748;
-        font-size: 0.95rem;
-        font-weight: 600;
-        margin-bottom: 0.75rem;
-    }
-    
-    /* Button styling fixes */
-    .stButton > button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        border-radius: 6px;
-        padding: 0.5rem 1rem;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        width: 100%;
-        font-size: 0.9rem;
-    }
-    
-    .stButton > button:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    }
-    
-    /* Progress bar styling */
+    /* Progress bar */
     .stProgress > div > div > div > div {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     }
     
-    /* DataFrame styling with proper width */
-    .dataframe {
+    /* Sidebar improvements */
+    .css-1d391kg {
+        background: #f8fafc;
+    }
+    
+    /* Text input improvements */
+    .stTextInput > div > div > input {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 0.5rem;
+    }
+    
+    /* Selectbox improvements */
+    .stSelectbox > div > div > div {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+    }
+    
+    /* Number input improvements */
+    .stNumberInput > div > div > input {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        padding: 0.5rem;
+    }
+    
+    /* File uploader improvements */
+    .stFileUploader > div {
+        border: 2px dashed #d1d5db;
         border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        width: 100%;
-        font-size: 0.9rem;
+        padding: 1rem;
+        background: #f9fafb;
     }
     
-    /* Fix column layout issues */
-    .stSelectbox, .stNumberInput, .stSlider, .stTextInput {
-        width: 100%;
+    /* Metric improvements */
+    .stMetric {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     
-    /* Responsive design improvements */
+    /* Responsive design */
     @media (max-width: 768px) {
-        .main-header {
-            padding: 1rem 0.5rem;
-        }
-        
         .main-header h1 {
-            font-size: 1.5rem;
+            font-size: 2rem;
         }
         
         .main-header p {
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
         
         .metric-card {
             padding: 1rem;
-        }
-        
-        .ai-insight {
-            padding: 1rem;
-        }
-        
-        .config-section {
-            padding: 1rem;
+            height: auto;
         }
         
         .feature-grid {
             grid-template-columns: 1fr;
         }
-        
-        .analysis-grid {
-            grid-template-columns: 1fr;
-        }
-        
-        .main .block-container {
-            padding-left: 0.5rem;
-            padding-right: 0.5rem;
-        }
-    }
-    
-    /* Fix any overflow issues */
-    .stApp {
-        overflow-x: hidden;
-    }
-    
-    /* Ensure proper container behavior */
-    .stApp > div {
-        overflow-x: hidden;
-    }
-    
-    /* Fix specific Streamlit column issues */
-    .stColumns {
-        gap: 0.75rem;
-    }
-    
-    .stColumn {
-        padding: 0 0.25rem;
     }
 </style>
 """, unsafe_allow_html=True)
+
 class AIAnalytics:
     """AI-powered analytics engine using Claude API"""
     
@@ -422,355 +404,7 @@ class AIAnalytics:
                 messages=[{"role": "user", "content": prompt}]
             )
             
-            # Parse AI response
-            ai_analysis = self._parse_ai_response(message.content[0].text)
-            return ai_analysis
-            
-        except Exception as e:
-            return {"error": f"AI analysis failed: {str(e)}"}
-    
-    def generate_migration_strategy(self, analysis_data: dict) -> dict:
-        """Generate detailed migration strategy with AI insights"""
-        
-        prompt = f"""
-        Based on the database analysis, create a comprehensive migration strategy:
-
-        Analysis Summary: 
-        - Engine: {analysis_data.get('engine', 'Unknown')}
-        - Estimated Cost: ${analysis_data.get('monthly_cost', 0):,.2f}/month
-        - Complexity: Medium to High
-
-        Please provide:
-        1. Pre-migration checklist and requirements
-        2. Detailed migration phases with timelines
-        3. Resource allocation recommendations
-        4. Testing and validation strategy
-        5. Rollback procedures
-        6. Post-migration optimization steps
-        7. Monitoring and alerting setup
-        8. Security and compliance considerations
-
-        Include specific AWS services, tools, and best practices.
-        """
-        
-        try:
-            message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=2500,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            
-            return self._parse_migration_strategy(message.content[0].text)
-            
-        except Exception as e:
-            return {"error": f"Migration strategy generation failed: {str(e)}"}
-    
-    def predict_future_requirements(self, historical_data: dict, years: int = 3) -> dict:
-        """Predict future resource requirements using AI"""
-        
-        prompt = f"""
-        As a data scientist specializing in capacity planning, analyze these metrics and predict future requirements:
-
-        Current Configuration:
-        - CPU Cores: {historical_data.get('cores')}
-        - RAM: {historical_data.get('ram')} GB
-        - Storage: {historical_data.get('storage')} GB
-        - Growth Rate: {historical_data.get('growth')}% annually
-        - Engine: {historical_data.get('engine')}
-
-        Prediction Period: {years} years
-
-        Consider:
-        - Technology evolution impact
-        - Business scaling factors
-        - Industry benchmarks for {historical_data.get('engine')} workloads
-
-        Provide predictions for:
-        - CPU requirements
-        - Memory usage
-        - Storage growth
-        - IOPS scaling
-        - Cost projections
-
-        Include key assumptions and confidence levels.
-        """
-        
-        try:
-            message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=2000,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            
-            return self._parse_predictions(message.content[0].text)
-            
-        except Exception as e:
-            return {"error": f"Prediction generation failed: {str(e)}"}
-    
-    def _parse_ai_response(self, response_text: str) -> dict:
-        """Parse AI response into structured data"""
-        # Extract key insights from the response
-        lines = response_text.split('\n')
-        
-        # Default structure
-        result = {
-            "workload_type": "Mixed",
-            "complexity": "Medium",
-            "timeline": "12-16 weeks",
-            "bottlenecks": [],
-            "recommendations": [],
-            "risks": [],
-            "summary": response_text[:500] + "..." if len(response_text) > 500 else response_text
-        }
-        
-        # Parse specific sections
-        current_section = ""
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-                
-            # Identify sections
-            if "workload" in line.lower() and ("classification" in line.lower() or "type" in line.lower()):
-                if "oltp" in line.lower():
-                    result["workload_type"] = "OLTP"
-                elif "olap" in line.lower():
-                    result["workload_type"] = "OLAP"
-                elif "mixed" in line.lower():
-                    result["workload_type"] = "Mixed"
-            
-            if "complexity" in line.lower():
-                if "high" in line.lower():
-                    result["complexity"] = "High"
-                elif "low" in line.lower():
-                    result["complexity"] = "Low"
-                else:
-                    result["complexity"] = "Medium"
-            
-            # Extract recommendations, bottlenecks, risks
-            if any(marker in line for marker in ['•', '-', '*', '1.', '2.', '3.']):
-                clean_line = line.strip('•-* \t0123456789.').strip()
-                if clean_line:
-                    if "recommend" in current_section.lower():
-                        result["recommendations"].append(clean_line)
-                    elif "bottleneck" in current_section.lower() or "performance" in current_section.lower():
-                        result["bottlenecks"].append(clean_line)
-                    elif "risk" in current_section.lower():
-                        result["risks"].append(clean_line)
-            
-            # Track current section
-            if ":" in line:
-                current_section = line
-        
-        # Ensure we have some content
-        if not result["recommendations"]:
-            result["recommendations"] = [
-                "Consider Aurora for improved performance and cost efficiency",
-                "Implement read replicas for better read performance",
-                "Use GP3 storage for cost optimization",
-                "Enable Performance Insights for monitoring"
-            ]
-        
-        if not result["bottlenecks"]:
-            result["bottlenecks"] = [
-                "CPU utilization may peak during business hours",
-                "Storage IOPS might be a limiting factor",
-                "Network bandwidth could impact data transfer"
-            ]
-        
-        if not result["risks"]:
-            result["risks"] = [
-                "Application compatibility testing required",
-                "Data migration complexity for large datasets",
-                "Downtime during cutover process"
-            ]
-        
-        return result
-    
-    def _parse_migration_strategy(self, response_text: str) -> dict:
-        """Parse migration strategy response"""
-        return {
-            "phases": [
-                "Assessment and Planning",
-                "Environment Setup and Testing", 
-                "Data Migration and Validation",
-                "Application Migration",
-                "Go-Live and Optimization"
-            ],
-            "timeline": "14-18 weeks",
-            "resources": [
-                "Database Migration Specialist",
-                "Cloud Architect", 
-                "DevOps Engineer",
-                "Application Developer",
-                "Project Manager"
-            ],
-            "risks": [
-                "Data consistency during migration",
-                "Application compatibility issues",
-                "Performance degradation post-migration"
-            ],
-            "tools": [
-                "AWS Database Migration Service (DMS)",
-                "AWS Schema Conversion Tool (SCT)",
-                "CloudFormation for infrastructure",
-                "CloudWatch for monitoring"
-            ],
-            "checklist": [
-                "Complete application dependency mapping",
-                "Set up target AWS environment",
-                "Configure monitoring and alerting",
-                "Establish rollback procedures",
-                "Plan communication strategy"
-            ],
-            "full_strategy": response_text
-        }
-    
-    def _parse_predictions(self, response_text: str) -> dict:
-        """Parse prediction response"""
-        return {
-            "cpu_trend": "Gradual increase expected",
-            "memory_trend": "Stable with seasonal peaks", 
-            "storage_trend": "Linear growth with data retention",
-            "cost_trend": "Optimized through right-sizing",
-            "confidence": "High (85-90%)",
-            "key_factors": [
-                "Business growth projections",
-                "Technology adoption patterns",
-                "Seasonal usage variations",
-                "Regulatory requirements"
-            ],
-            "recommendations": [
-                "Plan for 20% capacity buffer",
-                "Implement auto-scaling policies",
-                "Review and optimize quarterly",
-                "Consider reserved instances for predictable workloads"
-            ],
-            "full_prediction": response_text
-        }
-
-class EnhancedRDSCalculator:
-    """Enhanced RDS calculator with AI integration"""
-    
-    def __init__(self):
-        self.engines = ['oracle-ee', 'oracle-se', 'postgres', 'aurora-postgresql', 'aurora-mysql', 'sqlserver']
-        self.regions = ["us-east-1", "us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
-        
-        # Instance database with expanded options
-        self.instance_db = {
-            "us-east-1": {
-                "oracle-ee": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.136}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.475}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.95}},
-                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 1.90}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.60}},
-                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 1.20}},
-                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.92}}
-                ],
-                "aurora-postgresql": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
-                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
-                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.14}},
-                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
-                ],
-                "postgres": [
-                    {"type": "db.t3.micro", "vCPU": 2, "memory": 1, "pricing": {"ondemand": 0.0255}},
-                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.051}},
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.102}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.192}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.384}},
-                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 0.768}}
-                ],
-                "sqlserver": [
-                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.231}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.693}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 1.386}},
-                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 2.772}}
-                ],
-                "aurora-mysql": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
-                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
-                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
-                ],
-                "oracle-se": [
-                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.105}},
-                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.365}},
-                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.730}},
-                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.462}}
-                ]
-            }
-        }
-        
-        # Environment profiles
-        self.env_profiles = {
-            "PROD": {"cpu_factor": 1.0, "storage_factor": 1.0, "ha_required": True},
-            "STAGING": {"cpu_factor": 0.8, "storage_factor": 0.7, "ha_required": True},
-            "QA": {"cpu_factor": 0.6, "storage_factor": 0.5, "ha_required": False},
-            "DEV": {"cpu_factor": 0.4, "storage_factor": 0.3, "ha_required": False}
-        }
-        
-        # Add other regions with regional pricing adjustments
-        for region in ["us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]:
-            if region not in self.instance_db:
-                self.instance_db[region] = {}
-                for engine, instances in self.instance_db["us-east-1"].items():
-                    # Apply regional pricing multiplier
-                    multiplier = self._get_regional_multiplier(region)
-                    regional_instances = []
-                    for instance in instances:
-                        regional_instance = instance.copy()
-                        regional_instance["pricing"] = {
-                            "ondemand": instance["pricing"]["ondemand"] * multiplier
-                        }
-                        regional_instances.append(regional_instance)
-                    self.instance_db[region][engine] = regional_instances
-    
-    def _get_regional_multiplier(self, region: str) -> float:
-        """Get regional pricing multiplier"""
-        multipliers = {
-            "us-east-1": 1.0,
-            "us-west-1": 1.08,
-            "us-west-2": 1.05,
-            "eu-west-1": 1.12,
-            "ap-southeast-1": 1.15
-        }
-        return multipliers.get(region, 1.0)
-    
-    def calculate_requirements(self, inputs: dict, env: str) -> dict:
-        """Calculate resource requirements with AI-enhanced logic"""
-        profile = self.env_profiles[env]
-        
-        # Calculate resources with intelligent scaling
-        base_vcpus = inputs['cores'] * (inputs['cpu_util'] / 100)
-        base_ram = inputs['ram'] * (inputs['ram_util'] / 100)
-        
-        # Apply environment factors
-        if env == "PROD":
-            vcpus = max(4, int(base_vcpus * profile['cpu_factor'] * 1.2))
-            ram = max(8, int(base_ram * profile['cpu_factor'] * 1.2))
-            storage = max(100, int(inputs['storage'] * profile['storage_factor'] * 1.3))
-        elif env == "STAGING":
-            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
-            ram = max(4, int(base_ram * profile['cpu_factor']))
-            storage = max(50, int(inputs['storage'] * profile['storage_factor']))
-        elif env == "QA":
-            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
-            ram = max(4, int(base_ram * profile['cpu_factor']))
-            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
-        else:  # DEV
-            vcpus = max(1, int(base_vcpus * profile['cpu_factor']))
-            ram = max(2, int(base_ram * profile['cpu_factor']))
-            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
-        
-        # Apply growth projections only for PROD and STAGING
-        if env in ["PROD", "STAGING"]:
-            growth_factor = (1 + inputs['growth']/100) ** 2
-            storage = int(storage * growth_factor)
-        
-        # Select optimal instance
+            # Select optimal instance
         instance = self._select_optimal_instance(vcpus, ram, inputs['engine'], inputs['region'], env)
         
         # Calculate costs
@@ -3094,4 +2728,352 @@ def render_footer():
 # Run the application
 if __name__ == "__main__":
     main()
-    render_footer()
+    render_footer() Parse AI response
+            ai_analysis = self._parse_ai_response(message.content[0].text)
+            return ai_analysis
+            
+        except Exception as e:
+            return {"error": f"AI analysis failed: {str(e)}"}
+    
+    def generate_migration_strategy(self, analysis_data: dict) -> dict:
+        """Generate detailed migration strategy with AI insights"""
+        
+        prompt = f"""
+        Based on the database analysis, create a comprehensive migration strategy:
+
+        Analysis Summary: 
+        - Engine: {analysis_data.get('engine', 'Unknown')}
+        - Estimated Cost: ${analysis_data.get('monthly_cost', 0):,.2f}/month
+        - Complexity: Medium to High
+
+        Please provide:
+        1. Pre-migration checklist and requirements
+        2. Detailed migration phases with timelines
+        3. Resource allocation recommendations
+        4. Testing and validation strategy
+        5. Rollback procedures
+        6. Post-migration optimization steps
+        7. Monitoring and alerting setup
+        8. Security and compliance considerations
+
+        Include specific AWS services, tools, and best practices.
+        """
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=2500,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            return self._parse_migration_strategy(message.content[0].text)
+            
+        except Exception as e:
+            return {"error": f"Migration strategy generation failed: {str(e)}"}
+    
+    def predict_future_requirements(self, historical_data: dict, years: int = 3) -> dict:
+        """Predict future resource requirements using AI"""
+        
+        prompt = f"""
+        As a data scientist specializing in capacity planning, analyze these metrics and predict future requirements:
+
+        Current Configuration:
+        - CPU Cores: {historical_data.get('cores')}
+        - RAM: {historical_data.get('ram')} GB
+        - Storage: {historical_data.get('storage')} GB
+        - Growth Rate: {historical_data.get('growth')}% annually
+        - Engine: {historical_data.get('engine')}
+
+        Prediction Period: {years} years
+
+        Consider:
+        - Technology evolution impact
+        - Business scaling factors
+        - Industry benchmarks for {historical_data.get('engine')} workloads
+
+        Provide predictions for:
+        - CPU requirements
+        - Memory usage
+        - Storage growth
+        - IOPS scaling
+        - Cost projections
+
+        Include key assumptions and confidence levels.
+        """
+        
+        try:
+            message = self.client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            return self._parse_predictions(message.content[0].text)
+            
+        except Exception as e:
+            return {"error": f"Prediction generation failed: {str(e)}"}
+    
+    def _parse_ai_response(self, response_text: str) -> dict:
+        """Parse AI response into structured data"""
+        # Extract key insights from the response
+        lines = response_text.split('\n')
+        
+        # Default structure
+        result = {
+            "workload_type": "Mixed",
+            "complexity": "Medium",
+            "timeline": "12-16 weeks",
+            "bottlenecks": [],
+            "recommendations": [],
+            "risks": [],
+            "summary": response_text[:500] + "..." if len(response_text) > 500 else response_text
+        }
+        
+        # Parse specific sections
+        current_section = ""
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Identify sections
+            if "workload" in line.lower() and ("classification" in line.lower() or "type" in line.lower()):
+                if "oltp" in line.lower():
+                    result["workload_type"] = "OLTP"
+                elif "olap" in line.lower():
+                    result["workload_type"] = "OLAP"
+                elif "mixed" in line.lower():
+                    result["workload_type"] = "Mixed"
+            
+            if "complexity" in line.lower():
+                if "high" in line.lower():
+                    result["complexity"] = "High"
+                elif "low" in line.lower():
+                    result["complexity"] = "Low"
+                else:
+                    result["complexity"] = "Medium"
+            
+            # Extract recommendations, bottlenecks, risks
+            if any(marker in line for marker in ['•', '-', '*', '1.', '2.', '3.']):
+                clean_line = line.strip('•-* \t0123456789.').strip()
+                if clean_line:
+                    if "recommend" in current_section.lower():
+                        result["recommendations"].append(clean_line)
+                    elif "bottleneck" in current_section.lower() or "performance" in current_section.lower():
+                        result["bottlenecks"].append(clean_line)
+                    elif "risk" in current_section.lower():
+                        result["risks"].append(clean_line)
+            
+            # Track current section
+            if ":" in line:
+                current_section = line
+        
+        # Ensure we have some content
+        if not result["recommendations"]:
+            result["recommendations"] = [
+                "Consider Aurora for improved performance and cost efficiency",
+                "Implement read replicas for better read performance",
+                "Use GP3 storage for cost optimization",
+                "Enable Performance Insights for monitoring"
+            ]
+        
+        if not result["bottlenecks"]:
+            result["bottlenecks"] = [
+                "CPU utilization may peak during business hours",
+                "Storage IOPS might be a limiting factor",
+                "Network bandwidth could impact data transfer"
+            ]
+        
+        if not result["risks"]:
+            result["risks"] = [
+                "Application compatibility testing required",
+                "Data migration complexity for large datasets",
+                "Downtime during cutover process"
+            ]
+        
+        return result
+    
+    def _parse_migration_strategy(self, response_text: str) -> dict:
+        """Parse migration strategy response"""
+        return {
+            "phases": [
+                "Assessment and Planning",
+                "Environment Setup and Testing", 
+                "Data Migration and Validation",
+                "Application Migration",
+                "Go-Live and Optimization"
+            ],
+            "timeline": "14-18 weeks",
+            "resources": [
+                "Database Migration Specialist",
+                "Cloud Architect", 
+                "DevOps Engineer",
+                "Application Developer",
+                "Project Manager"
+            ],
+            "risks": [
+                "Data consistency during migration",
+                "Application compatibility issues",
+                "Performance degradation post-migration"
+            ],
+            "tools": [
+                "AWS Database Migration Service (DMS)",
+                "AWS Schema Conversion Tool (SCT)",
+                "CloudFormation for infrastructure",
+                "CloudWatch for monitoring"
+            ],
+            "checklist": [
+                "Complete application dependency mapping",
+                "Set up target AWS environment",
+                "Configure monitoring and alerting",
+                "Establish rollback procedures",
+                "Plan communication strategy"
+            ],
+            "full_strategy": response_text
+        }
+    
+    def _parse_predictions(self, response_text: str) -> dict:
+        """Parse prediction response"""
+        return {
+            "cpu_trend": "Gradual increase expected",
+            "memory_trend": "Stable with seasonal peaks", 
+            "storage_trend": "Linear growth with data retention",
+            "cost_trend": "Optimized through right-sizing",
+            "confidence": "High (85-90%)",
+            "key_factors": [
+                "Business growth projections",
+                "Technology adoption patterns",
+                "Seasonal usage variations",
+                "Regulatory requirements"
+            ],
+            "recommendations": [
+                "Plan for 20% capacity buffer",
+                "Implement auto-scaling policies",
+                "Review and optimize quarterly",
+                "Consider reserved instances for predictable workloads"
+            ],
+            "full_prediction": response_text
+        }
+
+class EnhancedRDSCalculator:
+    """Enhanced RDS calculator with AI integration"""
+    
+    def __init__(self):
+        self.engines = ['oracle-ee', 'oracle-se', 'postgres', 'aurora-postgresql', 'aurora-mysql', 'sqlserver']
+        self.regions = ["us-east-1", "us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
+        
+        # Instance database with expanded options
+        self.instance_db = {
+            "us-east-1": {
+                "oracle-ee": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.136}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.475}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.95}},
+                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 1.90}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.60}},
+                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 1.20}},
+                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.92}}
+                ],
+                "aurora-postgresql": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
+                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
+                    {"type": "db.r5.2xlarge", "vCPU": 8, "memory": 64, "pricing": {"ondemand": 1.14}},
+                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
+                ],
+                "postgres": [
+                    {"type": "db.t3.micro", "vCPU": 2, "memory": 1, "pricing": {"ondemand": 0.0255}},
+                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.051}},
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.102}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.192}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.384}},
+                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 0.768}}
+                ],
+                "sqlserver": [
+                    {"type": "db.t3.small", "vCPU": 2, "memory": 2, "pricing": {"ondemand": 0.231}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.693}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 1.386}},
+                    {"type": "db.m5.2xlarge", "vCPU": 8, "memory": 32, "pricing": {"ondemand": 2.772}}
+                ],
+                "aurora-mysql": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.082}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.285}},
+                    {"type": "db.r5.xlarge", "vCPU": 4, "memory": 32, "pricing": {"ondemand": 0.57}},
+                    {"type": "db.serverless", "vCPU": 0, "memory": 0, "pricing": {"ondemand": 0.12}}
+                ],
+                "oracle-se": [
+                    {"type": "db.t3.medium", "vCPU": 2, "memory": 4, "pricing": {"ondemand": 0.105}},
+                    {"type": "db.m5.large", "vCPU": 2, "memory": 8, "pricing": {"ondemand": 0.365}},
+                    {"type": "db.m5.xlarge", "vCPU": 4, "memory": 16, "pricing": {"ondemand": 0.730}},
+                    {"type": "db.r5.large", "vCPU": 2, "memory": 16, "pricing": {"ondemand": 0.462}}
+                ]
+            }
+        }
+        
+        # Environment profiles
+        self.env_profiles = {
+            "PROD": {"cpu_factor": 1.0, "storage_factor": 1.0, "ha_required": True},
+            "STAGING": {"cpu_factor": 0.8, "storage_factor": 0.7, "ha_required": True},
+            "QA": {"cpu_factor": 0.6, "storage_factor": 0.5, "ha_required": False},
+            "DEV": {"cpu_factor": 0.4, "storage_factor": 0.3, "ha_required": False}
+        }
+        
+        # Add other regions with regional pricing adjustments
+        for region in ["us-west-1", "us-west-2", "eu-west-1", "ap-southeast-1"]:
+            if region not in self.instance_db:
+                self.instance_db[region] = {}
+                for engine, instances in self.instance_db["us-east-1"].items():
+                    # Apply regional pricing multiplier
+                    multiplier = self._get_regional_multiplier(region)
+                    regional_instances = []
+                    for instance in instances:
+                        regional_instance = instance.copy()
+                        regional_instance["pricing"] = {
+                            "ondemand": instance["pricing"]["ondemand"] * multiplier
+                        }
+                        regional_instances.append(regional_instance)
+                    self.instance_db[region][engine] = regional_instances
+    
+    def _get_regional_multiplier(self, region: str) -> float:
+        """Get regional pricing multiplier"""
+        multipliers = {
+            "us-east-1": 1.0,
+            "us-west-1": 1.08,
+            "us-west-2": 1.05,
+            "eu-west-1": 1.12,
+            "ap-southeast-1": 1.15
+        }
+        return multipliers.get(region, 1.0)
+    
+    def calculate_requirements(self, inputs: dict, env: str) -> dict:
+        """Calculate resource requirements with AI-enhanced logic"""
+        profile = self.env_profiles[env]
+        
+        # Calculate resources with intelligent scaling
+        base_vcpus = inputs['cores'] * (inputs['cpu_util'] / 100)
+        base_ram = inputs['ram'] * (inputs['ram_util'] / 100)
+        
+        # Apply environment factors
+        if env == "PROD":
+            vcpus = max(4, int(base_vcpus * profile['cpu_factor'] * 1.2))
+            ram = max(8, int(base_ram * profile['cpu_factor'] * 1.2))
+            storage = max(100, int(inputs['storage'] * profile['storage_factor'] * 1.3))
+        elif env == "STAGING":
+            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
+            ram = max(4, int(base_ram * profile['cpu_factor']))
+            storage = max(50, int(inputs['storage'] * profile['storage_factor']))
+        elif env == "QA":
+            vcpus = max(2, int(base_vcpus * profile['cpu_factor']))
+            ram = max(4, int(base_ram * profile['cpu_factor']))
+            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
+        else:  # DEV
+            vcpus = max(1, int(base_vcpus * profile['cpu_factor']))
+            ram = max(2, int(base_ram * profile['cpu_factor']))
+            storage = max(20, int(inputs['storage'] * profile['storage_factor']))
+        
+        # Apply growth projections only for PROD and STAGING
+        if env in ["PROD", "STAGING"]:
+            growth_factor = (1 + inputs['growth']/100) ** 2
+            storage = int(storage * growth_factor)
+        
+        #
