@@ -38,24 +38,26 @@ REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", st.secrets.get("GOOGLE_REDI
 # The redirect URI should match what you configured in Google Cloud Console
 # For local development: http://localhost:8501
 # For Streamlit Community Cloud: https://<your-app-name>.streamlit.app
-GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "https://airdas.streamlit.app/") # REPLACE THIS if deployed
-
-if GOOGLE_CLIENT_ID == "GOOGLE_CLIENT_ID" or GOOGLE_CLIENT_SECRET == "GOOGLE_CLIENT_SECRET":
-    st.error("Google Client ID or Client Secret not set. Please follow the setup instructions.")
-    st.stop() # Stop the app if credentials are not configured
+#GOOGLE_REDIRECT_URI = os.environ.get("GOOGLE_REDIRECT_URI", "https://airdas.streamlit.app/") # REPLACE THIS if deployed
+# Define Google's OAuth 2.0 endpoints
+AUTHORIZE_URL = "https://accounts.google.com/o/oauth2/v2/auth"
+TOKEN_URL = "https://oauth2.googleapis.com/token"
+#if GOOGLE_CLIENT_ID == "GOOGLE_CLIENT_ID" or GOOGLE_CLIENT_SECRET == "GOOGLE_CLIENT_SECRET":
+ #   st.error("Google Client ID or Client Secret not set. Please follow the setup instructions.")
+ #   st.stop() # Stop the app if credentials are not configured
 if not CLIENT_ID or not CLIENT_SECRET or not REDIRECT_URI:
     st.error("Google Client ID, Client Secret, or Redirect URI not set. Please follow the instructions to configure them.")
     st.stop() # Stop the app if credentials are not configured
-
-#oauth2 = OAuth2(
-#    client_id=GOOGLE_CLIENT_ID,
-#    client_secret=GOOGLE_CLIENT_SECRET,
-#    redirect_uri=GOOGLE_REDIRECT_URI,
-#    authorize_url="https://accounts.google.com/o/oauth2/auth",
-#    token_url="https://oauth2.googleapis.com/token",
-#    scope=["openid", "email", "profile"], # Required scopes for Google
-#    allow_non_secure_http=True if "localhost" in GOOGLE_REDIRECT_URI else False # Set to False in production for HTTPS
-#)
+# Initialize the OAuth2 component
+oauth2 = OAuth2(
+    client_id=CLIENT_ID,
+    client_secret=CLIENT_SECRET,
+    #redirect_uri=GOOGLE_REDIRECT_URI,
+    authorize_endpoint="AUTHORIZE_URL",
+    token_endpoint="TOKEN_URL",
+    #scope=["openid", "email", "profile"], # Required scopes for Google
+    #allow_non_secure_http=True if "localhost" in GOOGLE_REDIRECT_URI else False # Set to False in production for HTTPS
+)
 
 # --- END NEW: Google Authentication Setup ---
 # Configure enterprise-grade UI
