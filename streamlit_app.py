@@ -729,37 +729,48 @@ def main():
     }
     
     # File import section
-    with st.expander("📁 Import Database Configurations", expanded=False):
-        uploaded_file = st.file_uploader(
-            "Upload CSV/Excel file with database configurations", 
-            type=["csv", "xlsx"],
-            help="Upload a file containing multiple database configurations"
-        )
-        
-        if uploaded_file:
-            try:
-                valid_inputs, errors = parse_uploaded_file(uploaded_file)
+    st.subheader("📁 Import Database Configurations")
+    uploaded_file = st.file_uploader(
+        "Upload CSV/Excel file with database configurations", 
+        type=["csv", "xlsx"],
+        help="Upload a file containing multiple database configurations"
+    )
+    
+    if uploaded_file:
+        try:
+            valid_inputs, errors = parse_uploaded_file(uploaded_file)
+            
+            if errors:
+                st.error("❌ **File Processing Errors:**")
+                for error in errors:
+                    st.error(f"• {error}")
+            
+            if valid_inputs:
+                st.success(f"✅ Successfully parsed {len(valid_inputs)} valid database configurations")
+                st.session_state.file_inputs = valid_inputs
                 
-                if errors:
-                    for error in errors:
-                        st.error(error)
+                # Show preview in a separate section
+                st.markdown("#### 👁️ Preview Imported Data")
+                preview_df = pd.DataFrame(valid_inputs)
+                st.dataframe(preview_df.head(), use_container_width=True)
                 
-                if valid_inputs:
-                    st.success(f"✅ Successfully parsed {len(valid_inputs)} valid database configurations")
-                    st.session_state.file_inputs = valid_inputs
-                    
-                    # Show preview
-                    with st.expander("Preview Imported Data"):
-                        preview_df = pd.DataFrame(valid_inputs)
-                        st.dataframe(preview_df.head())
-                    
+                # Analysis options
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.markdown("**Analysis Options:**")
+                    st.write(f"• AI Workload Analysis: {'✅' if enable_ai_analysis else '❌'}")
+                    st.write(f"• Future Predictions: {'✅' if enable_predictions else '❌'}")
+                    st.write(f"• Migration Strategy: {'✅' if enable_migration_strategy else '❌'}")
+                
+                with col2:
                     if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
                         if not api_key:
                             st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
                         else:
                             analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
-            except Exception as e:
-                st.error(f"Error processing file: {str(e)}")
+        except Exception as e:
+            st.error(f"❌ **Error processing file:** {str(e)}")
+            st.info("💡 Make sure your CSV file has all required columns and proper formatting.")
     
     # Main content area
     col1, col2 = st.columns([3, 1])
