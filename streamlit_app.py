@@ -738,16 +738,27 @@ def main():
     
     if uploaded_file:
         try:
+            # Show file info for debugging
+            st.info(f"📄 Processing file: {uploaded_file.name} ({uploaded_file.size} bytes)")
+            
             valid_inputs, errors = parse_uploaded_file(uploaded_file)
             
+            # Show detailed results
             if errors:
-                st.error("❌ **File Processing Errors:**")
-                for error in errors:
-                    st.error(f"• {error}")
+                st.error(f"❌ **Found {len(errors)} validation errors:**")
+                for i, error in enumerate(errors, 1):
+                    st.error(f"{i}. {error}")
             
             if valid_inputs:
-                st.success(f"✅ Successfully parsed {len(valid_inputs)} valid database configurations")
+                st.success(f"✅ Successfully parsed **{len(valid_inputs)}** valid database configurations out of total rows")
                 st.session_state.file_inputs = valid_inputs
+                
+                # Show summary of what was parsed
+                if len(valid_inputs) > 0:
+                    sample = valid_inputs[0]
+                    st.info(f"📋 **Sample parsed data:** {sample.get('db_name', 'Unknown')} - {sample.get('engine', 'Unknown')} in {sample.get('region', 'Unknown')}")
+            else:
+                st.error("❌ No valid database configurations found. Please check your file format and data.")
                 
                 # Show preview in a separate section
                 st.markdown("#### 👁️ Preview Imported Data")
