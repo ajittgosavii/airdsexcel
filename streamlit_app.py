@@ -369,41 +369,47 @@ class AIAnalytics:
         self.client = anthropic.Anthropic(api_key=api_key)
     
     def analyze_workload_patterns(self, workload_data: dict) -> dict:
-        """Analyze workload patterns and provide intelligent recommendations"""
-        
+       """Analyze workload patterns and provide intelligent recommendations"""
+    
         prompt = f"""
-        As an expert database architect and cloud migration specialist, analyze this workload data and provide intelligent insights:
+    As an expert database architect and cloud migration specialist, analyze this workload data and provide intelligent insights:
 
-        Workload Data:
-        - Database Engine: {workload_data.get('engine')}
-        - Current CPU Cores: {workload_data.get('cores')}
-        - Current RAM: {workload_data.get('ram')} GB
-        - Storage: {workload_data.get('storage')} GB
-        - Peak CPU Utilization: {workload_data.get('cpu_util')}%
-        - Peak RAM Utilization: {workload_data.get('ram_util')}%
-        - IOPS Requirements: {workload_data.get('iops')}
-        - Growth Rate: {workload_data.get('growth')}% annually
-        - Region: {workload_data.get('region')}
+    Workload Data:
+    - Database Engine: {workload_data.get('engine')}
+    - Current CPU Cores: {workload_data.get('cores')}
+    - Current RAM: {workload_data.get('ram')} GB
+    - Storage: {workload_data.get('storage')} GB
+    - Peak CPU Utilization: {workload_data.get('cpu_util')}%
+    - Peak RAM Utilization: {workload_data.get('ram_util')}%
+    - IOPS Requirements: {workload_data.get('iops')}
+    - Growth Rate: {workload_data.get('growth')}% annually
+    - Region: {workload_data.get('region')}
 
-        Please provide a comprehensive analysis including:
-        1. Workload Classification (OLTP/OLAP/Mixed)
-        2. Performance Bottleneck Identification
-        3. Right-sizing Recommendations
-        4. Cost Optimization Opportunities
-        5. Migration Strategy Recommendations
-        6. Risk Assessment and Mitigation
-        7. Timeline and Complexity Estimation
+    Please provide a comprehensive analysis including:
+    1. Workload Classification (OLTP/OLAP/Mixed)
+    2. Performance Bottleneck Identification
+    3. Right-sizing Recommendations
+    4. Cost Optimization Opportunities
+    5. Migration Strategy Recommendations
+    6. Risk Assessment and Mitigation
+    7. Timeline and Complexity Estimation
 
-        Respond in a structured format with clear sections.
-        """
+    Respond in a structured format with clear sections.
+    """
+    
+    try:
+        message = self.client.messages.create(
+            model="claude-3-sonnet-20240229",
+            max_tokens=2000,
+            messages=[{"role": "user", "content": prompt}]
+        )
         
-        try:
-            message = self.client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=2000,
-                messages=[{"role": "user", "content": prompt}]
-            )
-            
+        # Parse AI response
+        ai_analysis = self._parse_ai_response(message.content[0].text)
+        return ai_analysis
+        
+    except Exception as e:
+        return {"error": f"AI analysis failed: {str(e)}"}
             # Select optimal instance
         instance = self._select_optimal_instance(vcpus, ram, inputs['engine'], inputs['region'], env)
         
