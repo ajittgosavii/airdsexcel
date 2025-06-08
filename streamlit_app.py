@@ -1344,7 +1344,7 @@ def render_bulk_upload_tab(enable_ai_analysis, enable_predictions, enable_migrat
         )
     
     with upload_cols[1]:
-        if st.button("📋 Download Template", use_container_width=True):
+        if st.button("📋 Download Template", use_container_width=True, key="download_template_button"):
             # Create sample template
             template_data = {
                 'db_name': ['ProductionDB', 'StagingDB', 'AnalyticsDB'],
@@ -1370,7 +1370,8 @@ def render_bulk_upload_tab(enable_ai_analysis, enable_predictions, enable_migrat
                 data=csv_buffer.getvalue(),
                 file_name=f"database_migration_template_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv",
-                use_container_width=True
+                use_container_width=True,
+                key="download_csv_template_button"
             )
     
     if uploaded_file:
@@ -1427,19 +1428,33 @@ def process_bulk_upload(uploaded_file, enable_ai_analysis, enable_predictions, e
             # Analysis controls
             st.markdown("#### 🚀 Bulk Analysis")
             
-            analysis_control_cols = st.columns([2, 1])
-            with analysis_control_cols[0]:
-                st.markdown("**Analysis Settings:**")
-                st.write(f"• AI Workload Analysis: {'✅ Enabled' if enable_ai_analysis else '❌ Disabled'}")
-                st.write(f"• Future Predictions: {'✅ Enabled' if enable_predictions else '❌ Disabled'}")
-                st.write(f"• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}")
+            # Use a container with flexbox to center the button
+            st.markdown("""
+            <div style="display: flex; justify-content: center; width: 100%; margin-top: 1.5rem; margin-bottom: 1.5rem;">
+            """, unsafe_allow_html=True)
             
-            with analysis_control_cols[1]:
-                if st.button("🚀 Analyze All Databases", type="primary", use_container_width=True):
-                    if not api_key and (enable_ai_analysis or enable_predictions or enable_migration_strategy):
-                        st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
-                    else:
-                        analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+            # The button itself
+            if st.button("🚀 Analyze All Databases", type="primary", use_container_width=False, key="bulk_analyze_button"):
+                if not api_key and (enable_ai_analysis or enable_predictions or enable_migration_strategy):
+                    st.error("🔑 Please enter your Claude API key in the sidebar to enable AI analysis")
+                else:
+                    analyze_file(valid_inputs, enable_ai_analysis, enable_predictions, enable_migration_strategy)
+            
+            st.markdown("</div>", unsafe_allow_html=True) # Close the centering div
+
+            # The status of AI features, now separate from the button's centering logic
+            st.markdown("""
+            <div style="margin-top: 1rem; padding: 1rem; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+                <strong>Analysis Settings:</strong><br>
+                <ul>
+                    <li>• AI Workload Analysis: {'✅ Enabled' if enable_ai_analysis else '❌ Disabled'}</li>
+                    <li>• Future Predictions: {'✅ Enabled' if enable_predictions else '❌ Disabled'}</li>
+                    <li>• Migration Strategy: {'✅ Enabled' if enable_migration_strategy else '❌ Disabled'}</li>
+                </ul>
+            </div>
+            """.format(enable_ai_analysis=enable_ai_analysis, enable_predictions=enable_predictions, enable_migration_strategy=enable_migration_strategy), unsafe_allow_html=True)
+
+
         else:
             st.error("❌ No valid database configurations found. Please check your file format and data.")
             
@@ -1540,7 +1555,7 @@ def render_reports_tab():
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("📊 Generate Executive Summary", use_container_width=True):
+        if st.button("📊 Generate Executive Summary", use_container_width=True, key="generate_executive_summary"):
             st.info("Run an analysis first to generate executive reports")
     
     with report_cols[1]:
@@ -1557,7 +1572,7 @@ def render_reports_tab():
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("🔧 Generate Technical Report", use_container_width=True):
+        if st.button("🔧 Generate Technical Report", use_container_width=True, key="generate_technical_report"):
             st.info("Run an analysis first to generate technical reports")
     
     # Sample downloads
@@ -1566,7 +1581,7 @@ def render_reports_tab():
     template_cols = st.columns(3)
     
     with template_cols[0]:
-        if st.button("📋 Download Input Template", use_container_width=True):
+        if st.button("📋 Download Input Template", use_container_width=True, key="download_input_template"):
             # Create sample template
             template_data = {
                 'db_name': ['ProductionDB', 'StagingDB'],
@@ -1592,15 +1607,16 @@ def render_reports_tab():
                 data=csv_buffer.getvalue(),
                 file_name=f"migration_template_{datetime.now().strftime('%Y%m%d')}.csv",
                 mime="text/csv",
-                use_container_width=True
+                use_container_width=True,
+                key="download_migration_template_button"
             )
     
     with template_cols[1]:
-        if st.button("📊 Sample Analysis Report", use_container_width=True):
+        if st.button("📊 Sample Analysis Report", use_container_width=True, key="sample_analysis_report"):
             generate_sample_report()
     
     with template_cols[2]:
-        if st.button("📖 Migration Guide", use_container_width=True):
+        if st.button("📖 Migration Guide", use_container_width=True, key="migration_guide"):
             st.info("Migration guide will be available after running analysis")
 
 def perform_basic_calculation(inputs):
@@ -2215,12 +2231,13 @@ def render_future_planning_tab(ai_insights, recommendations, inputs):
                 st.markdown("""
                 <div class="config-section">
                     <div class="config-header">🔍 Key Factors</div>
+                    <ul>
                 """, unsafe_allow_html=True)
                 
                 for factor in key_factors:
-                    st.markdown(f"• {factor}")
+                    st.markdown(f"<li>{factor}</li>", unsafe_allow_html=True)
                 
-                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("</ul></div>", unsafe_allow_html=True)
     else:
         # Show basic projections without AI
         st.markdown("##### 📊 Basic Growth Projections")
@@ -2307,12 +2324,13 @@ def render_migration_strategy_tab(ai_insights, recommendations):
                 st.markdown("""
                 <div class="config-section">
                     <div class="config-header">🛠️ Recommended Tools</div>
+                    <ul>
                 """, unsafe_allow_html=True)
                 
                 for tool in tools:
-                    st.markdown(f"• {tool}")
+                    st.markdown(f"<li>{tool}</li>", unsafe_allow_html=True)
                 
-                st.markdown("</div>", unsafe_allow_html=True)
+                st.markdown("</ul></div>", unsafe_allow_html=True)
         
         # Pre-migration checklist
         checklist = migration.get('checklist', [])
@@ -2825,7 +2843,8 @@ def render_bulk_individual_tab(all_results):
     selected_idx = st.selectbox(
         "Select database for detailed analysis:",
         options=list(range(len(all_results))),
-        format_func=lambda x: db_options[x]
+        format_func=lambda x: db_options[x],
+        key="individual_db_selector"
     )
     
     if selected_idx is not None:
@@ -2987,7 +3006,7 @@ def render_bulk_export_tab(all_results):
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("📈 Generate Executive Report", use_container_width=True):
+        if st.button("📈 Generate Executive Report", use_container_width=True, key="generate_executive_report_bulk"):
             try:
                 excel_data = export_full_report(all_results)
                 st.download_button(
@@ -2995,7 +3014,8 @@ def render_bulk_export_tab(all_results):
                     data=excel_data,
                     file_name=f"executive_migration_report_{datetime.now().strftime('%Y%m%d_%H%M')}.xlsx",
                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
+                    use_container_width=True,
+                    key="download_executive_excel_bulk"
                 )
                 st.success("✅ Executive report generated successfully!")
             except Exception as e:
@@ -3040,7 +3060,8 @@ def render_bulk_export_tab(all_results):
             data=csv_data,
             file_name=f"migration_summary_{datetime.now().strftime('%Y%m%d_%H%M')}.csv",
             mime="text/csv",
-            use_container_width=True
+            use_container_width=True,
+            key="download_summary_csv_bulk"
         )
         
         # Technical JSON export
@@ -3050,7 +3071,8 @@ def render_bulk_export_tab(all_results):
             data=json_data,
             file_name=f"migration_technical_{datetime.now().strftime('%Y%m%d_%H%M')}.json",
             mime="application/json",
-            use_container_width=True
+            use_container_width=True,
+            key="download_technical_json_bulk"
         )
     
     with export_cols[2]:
@@ -3067,7 +3089,7 @@ def render_bulk_export_tab(all_results):
         </div>
         """, unsafe_allow_html=True)
         
-        if st.button("📧 Generate Email Summary", use_container_width=True):
+        if st.button("📧 Generate Email Summary", use_container_width=True, key="generate_email_summary_bulk"):
             total_monthly = sum(result['recommendations']['PROD']['monthly_cost'] for result in all_results)
             total_annual = total_monthly * 12
             total_onprem = sum(result['inputs']['cores'] * 200 for result in all_results)
@@ -3178,7 +3200,8 @@ def generate_sample_report():
         data=csv_buffer.getvalue(),
         file_name=f"migration_analysis_sample_{datetime.now().strftime('%Y%m%d')}.csv",
         mime="text/csv",
-        use_container_width=True
+        use_container_width=True,
+        key="download_sample_csv_report"
     )
     
     st.info("💡 This is a sample report demonstrating the output format. Run the full analysis with your Claude API key to generate comprehensive reports with AI insights.")
