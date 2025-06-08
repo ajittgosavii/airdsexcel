@@ -372,7 +372,7 @@ class AIAnalytics:
        """Analyze workload patterns and provide intelligent recommendations"""
     
         prompt = f"""
-    As an expert database architect and cloud migration specialist, analyze this workload data and provide intelligent insights:
+        As an expert database architect and cloud migration specialist, analyze this workload data and provide intelligent insights:
 
     Workload Data:
     - Database Engine: {workload_data.get('engine')}
