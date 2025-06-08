@@ -1468,7 +1468,7 @@ def initialize_session_state():
 
 def main():
     """Main application function"""
-        st.title("🤖 AI Database Migration Studio")
+        #st.title("🤖 AI Database Migration Studio")
 
     # --- Diagnostic: Check session state ---
         st.write("Current session state:", st.session_state)
