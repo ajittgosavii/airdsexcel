@@ -397,19 +397,20 @@ def analyze_workload_patterns(self, workload_data: dict) -> dict:
     Respond in a structured format with clear sections.
     """
 
-    try:    
-            message = self.client.messages.create(
+    try:
+        message = self.client.messages.create(
             model="claude-3-sonnet-20240229",
             max_tokens=2000,
             messages=[{"role": "user", "content": prompt}]
-            )
+        )
 
-           # Parse AI response
-           ai_analysis = self._parse_ai_response(message.content[0].text)
-           return ai_analysis
+        # Parse AI response
+        ai_analysis = self._parse_ai_response(message.content[0].text)
+        return ai_analysis
 
     except Exception as e:
-           return {"error": f"AI analysis failed: {str(e)}"}
+        return {"error": f"AI analysis failed: {str(e)}"}
+
 
             # Select optimal instance
         instance = self._select_optimal_instance(vcpus, ram, inputs['engine'], inputs['region'], env)
