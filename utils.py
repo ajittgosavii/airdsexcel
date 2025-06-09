@@ -41,10 +41,14 @@ def parse_uploaded_file(uploaded_file):
     
     # Optional columns with defaults
     optional_columns = {
-        'growth_rate': ('growth', 15),
-        'backup_days': ('backup_days', 7),
-        'projection_years': ('years', 3),
-        'data_transfer_gb': ('data_transfer_gb', 100)
+    'growth_rate': ('growth', 15),
+    'backup_days': ('backup_days', 7),
+    'projection_years': ('years', 3),
+    'data_transfer_gb': ('data_transfer_gb', 100),
+    # Add Multi-AZ optional columns
+    'multi_az_enabled': ('multi_az_enabled', False),
+    'read_replica_count': ('read_replica_count', 2),
+    'read_write_ratio': ('read_write_ratio', 70)
     }
     
     # Check for required columns
