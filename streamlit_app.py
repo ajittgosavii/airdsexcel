@@ -3908,3 +3908,44 @@ def render_recommendations_tab(recommendations, inputs):
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+def render_footer():
+    """Render enhanced application footer"""
+    st.markdown("---")
+    st.markdown("""
+    <div class="footer-content">
+        <h3>🚀 AI Database Migration Studio</h3>
+        <p style="font-size: 1.1rem; font-weight: 600; color: #667eea; margin: 1rem 0;">
+            Powered by Claude AI • Enterprise-Ready • Cloud-Native
+        </p>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <strong>✅ Multi-Engine Support</strong><br>
+                <small>Oracle, PostgreSQL, SQL Server, MySQL</small>
+            </div>
+            <div class="feature-item">
+                <strong>🤖 AI-Powered Analysis</strong><br>
+                <small>Intelligent workload assessment</small>
+            </div>
+            <div class="feature-item">
+                <strong>📊 Cost Optimization</strong><br>
+                <small>Right-sizing and savings analysis</small>
+            </div>
+            <div class="feature-item">
+                <strong>🔒 Enterprise Security</strong><br>
+                <small>AWS best practices compliance</small>
+            </div>
+        </div>
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid #e2e8f0;">
+            <p style="font-size: 0.9rem; color: #64748b; margin: 0;">
+                Transform your database migration journey with the power of artificial intelligence.<br>
+                Built for enterprise teams seeking intelligent, cost-effective cloud migration solutions.
+            </p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Run the application
+if __name__ == "__main__":
+    main()
+    render_footer()
